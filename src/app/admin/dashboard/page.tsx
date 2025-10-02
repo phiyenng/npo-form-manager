@@ -163,8 +163,8 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Vietnam Technical Support Center</h1>
-              <p className="text-gray-600">Viettel Oversea Markets</p>
+               <h1 className="text-2xl font-bold text-gray-900">Viettel Technical Support System</h1>
+               <p className="text-gray-600">Viettel Overseas Markets</p>
             </div>
             <div className="flex space-x-4">
               <button
