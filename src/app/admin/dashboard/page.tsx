@@ -64,7 +64,7 @@ export default function AdminDashboard() {
 
   const updateFormStatus = async (formId: string, newStatus: string) => {
     try {
-      const updateData: any = { status: newStatus }
+      const updateData: { status: string; end_time?: string } = { status: newStatus }
       
       // Auto-update end_time when status is changed to "Closed"
       if (newStatus === 'Closed') {
