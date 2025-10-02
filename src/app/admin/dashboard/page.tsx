@@ -1,0 +1,399 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import { Download, LogOut, Eye, FileText, Clock, CheckCircle, XCircle } from 'lucide-react'
+import * as XLSX from 'xlsx'
+
+interface FormData {
+  id: string
+  operator: string
+  country: string
+  issue: string
+  issue_description: string
+  kpis_affected: string
+  counter_evaluation: string
+  optimization_actions: string
+  file_url: string | null
+  priority: string
+  service_impacted: boolean
+  start_time: string
+  end_time: string
+  creator: string
+  status: string
+  created_at: string
+}
+
+export default function AdminDashboard() {
+  const router = useRouter()
+  const [forms, setForms] = useState<FormData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedForm, setSelectedForm] = useState<FormData | null>(null)
+
+  useEffect(() => {
+    // Check if user is admin
+    const isAdmin = localStorage.getItem('isAdmin')
+    if (!isAdmin) {
+      router.push('/admin')
+      return
+    }
+
+    fetchForms()
+  }, [router])
+
+  const fetchForms = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('forms')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        throw error
+      }
+
+      setForms(data || [])
+    } catch (error) {
+      console.error('Error fetching forms:', error)
+      alert('Error loading forms')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateFormStatus = async (formId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('forms')
+        .update({ status: newStatus })
+        .eq('id', formId)
+
+      if (error) {
+        throw error
+      }
+
+      // Update local state
+      setForms(forms.map(form => 
+        form.id === formId ? { ...form, status: newStatus } : form
+      ))
+
+      alert('Status updated successfully')
+    } catch (error) {
+      console.error('Error updating status:', error)
+      alert('Error updating status')
+    }
+  }
+
+  const exportToExcel = () => {
+    const exportData = forms.map(form => ({
+      'ID': form.id,
+      'Operator': form.operator,
+      'Country': form.country,
+      'Issue': form.issue,
+      'Priority': form.priority,
+      'Service Impacted': form.service_impacted ? 'Yes' : 'No',
+      'Status': form.status,
+      'Creator': form.creator,
+      'Start Time': new Date(form.start_time).toLocaleString(),
+      'End Time': new Date(form.end_time).toLocaleString(),
+      'Created At': new Date(form.created_at).toLocaleString(),
+      'Issue Description': form.issue_description,
+      'KPIs Affected': form.kpis_affected,
+      'Counter Evaluation': form.counter_evaluation,
+      'Optimization Actions': form.optimization_actions,
+      'File URL': form.file_url || 'No file'
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(exportData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Forms')
+    
+    const fileName = `forms_export_${new Date().toISOString().split('T')[0]}.xlsx`
+    XLSX.writeFile(wb, fileName)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAdmin')
+    router.push('/')
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'High': return 'bg-red-100 text-red-800'
+      case 'Medium': return 'bg-yellow-100 text-yellow-800'
+      case 'Low': return 'bg-green-100 text-green-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Closed': return 'bg-green-100 text-green-800'
+      case 'Inprocess': return 'bg-blue-100 text-blue-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <Clock className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+              <p className="text-gray-600">Manage form submissions</p>
+            </div>
+            <div className="flex space-x-4">
+              <button
+                onClick={exportToExcel}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export Excel</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <FileText className="w-8 h-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Forms</p>
+                <p className="text-2xl font-bold text-gray-900">{forms.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <Clock className="w-8 h-8 text-yellow-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">In Process</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {forms.filter(f => f.status === 'Inprocess').length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Closed</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {forms.filter(f => f.status === 'Closed').length}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Forms Table */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">Form Submissions</h2>
+          </div>
+          
+          {forms.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">No forms submitted yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Form Details
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Priority
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {forms.map((form) => (
+                    <tr key={form.id} className="hover:bg-gray-100">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {form.issue}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {form.operator} - {form.country} | {form.creator}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(form.priority)}`}>
+                          {form.priority}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <select
+                          value={form.status}
+                          onChange={(e) => updateFormStatus(form.id, e.target.value)}
+                          className={`text-xs font-semibold rounded-full px-2 py-1 border-0 ${getStatusColor(form.status)}`}
+                        >
+                          <option value="Inprocess">Inprocess</option>
+                          <option value="Closed">Closed</option>
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(form.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => setSelectedForm(form)}
+                          className="text-indigo-600 hover:text-indigo-900 flex items-center space-x-1"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span>View</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Form Detail Modal */}
+      {selectedForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-900">Form Details</h3>
+              <button
+                onClick={() => setSelectedForm(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="px-6 py-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Operator</label>
+                  <p className="text-sm text-gray-900">{selectedForm.operator}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Country</label>
+                  <p className="text-sm text-gray-900">{selectedForm.country}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Priority</label>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(selectedForm.priority)}`}>
+                    {selectedForm.priority}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Service Impacted</label>
+                  <p className="text-sm text-gray-900">{selectedForm.service_impacted ? 'Yes' : 'No'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Start Time</label>
+                  <p className="text-sm text-gray-900">{new Date(selectedForm.start_time).toLocaleString()}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">End Time</label>
+                  <p className="text-sm text-gray-900">{new Date(selectedForm.end_time).toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Issue</label>
+                <p className="text-sm text-gray-900">{selectedForm.issue}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Issue Description</label>
+                <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedForm.issue_description}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">KPIs Affected</label>
+                <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedForm.kpis_affected}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Counter Evaluation</label>
+                <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedForm.counter_evaluation}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Optimization Actions</label>
+                <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedForm.optimization_actions}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Creator</label>
+                <p className="text-sm text-gray-900">{selectedForm.creator}</p>
+              </div>
+
+              {selectedForm.file_url && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Attached File</label>
+                  <a
+                    href={selectedForm.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    View File
+                  </a>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => setSelectedForm(null)}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
