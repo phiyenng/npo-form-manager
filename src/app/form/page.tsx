@@ -18,18 +18,11 @@ const formSchema = z.object({
   counter_evaluation: z.string().min(1, 'Counter evaluation is required'),
   optimization_actions: z.string().min(1, 'Optimization actions is required'),
   priority: z.string().min(1, 'Priority is required'),
-  service_impacted: z.union([z.boolean(), z.string()]).transform((val) => {
-    if (typeof val === 'string') {
-      return val === 'true'
-    }
-    return val
-  }),
   start_time: z.string().min(1, 'Start time is required'),
-  end_time: z.string().min(1, 'End time is required'),
   creator: z.string().min(1, 'Creator is required'),
+  phone_number: z.string().min(1, 'Phone number is required'),
 })
 
-type FormData = z.infer<typeof formSchema>
 
 const operatorCountryMap: Record<string, string> = {
   'Bitel': 'Peru',
@@ -56,10 +49,7 @@ export default function FormPage() {
     setValue,
     formState: { errors }
   } = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      service_impacted: false
-    }
+    resolver: zodResolver(formSchema)
   })
 
   const selectedOperator = watch('operator')
@@ -106,7 +96,7 @@ export default function FormPage() {
     return data.publicUrl
   }
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsSubmitting(true)
     
     try {
@@ -196,10 +186,10 @@ export default function FormPage() {
             />
           </div>
 
-          {/* Issue */}
+          {/* Issue Name*/}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Issue <span className="text-red-500">*</span>
+              Issue Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -263,7 +253,7 @@ export default function FormPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Optimization Actions<span className="text-red-500">*</span>
+                Action You Tried but Not Resolved<span className="text-red-500">*</span>
               </label>
               <textarea
                 {...register('optimization_actions')}
@@ -279,7 +269,7 @@ export default function FormPage() {
 
           {/* File Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Attach File</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Dump/OSS KPIs Data</label>
             <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:border-gray-400 transition-colors">
               <input
                 type="file"
@@ -310,81 +300,56 @@ export default function FormPage() {
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
             >
               <option value="">Select priority</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
+              <option value="Normal">Normal</option>
+              <option value="Urgent">Urgent</option>
             </select>
             {errors.priority && (
               <p className="text-red-500 text-sm mt-1">{errors.priority.message}</p>
             )}
           </div>
 
-          {/* Service Impacted */}
+
+          {/* Start Time */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Service Impacted</label>
-            <div className="flex space-x-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  {...register('service_impacted')}
-                  value="true"
-                  className="mr-2"
-                />
-                Yes
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  {...register('service_impacted')}
-                  value="false"
-                  className="mr-2"
-                />
-                No
-              </label>
-            </div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Issue Start Time <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              {...register('start_time')}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+            />
+            {errors.start_time && (
+              <p className="text-red-500 text-sm mt-1">{errors.start_time.message}</p>
+            )}
           </div>
 
-          {/* Time Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Start Time <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="datetime-local"
-                {...register('start_time')}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-              />
-              {errors.start_time && (
-                <p className="text-red-500 text-sm mt-1">{errors.start_time.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                End Time <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="datetime-local"
-                {...register('end_time')}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-              />
-              {errors.end_time && (
-                <p className="text-red-500 text-sm mt-1">{errors.end_time.message}</p>
-              )}
-            </div>
+          {/* Phone Number */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Phone Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              {...register('phone_number')}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              placeholder="Enter your phone number"
+            />
+            {errors.phone_number && (
+              <p className="text-red-500 text-sm mt-1">{errors.phone_number.message}</p>
+            )}
           </div>
 
           {/* Creator */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Creator <span className="text-red-500">*</span>
+              Your Email Address <span className="text-red-500">*</span>
             </label>
             <input
-              type="text"
+              type="email"
               {...register('creator')}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-              placeholder="Enter your name"
+              placeholder="Enter your email address"
             />
             {errors.creator && (
               <p className="text-red-500 text-sm mt-1">{errors.creator.message}</p>

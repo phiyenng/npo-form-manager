@@ -17,10 +17,10 @@ interface FormData {
   optimization_actions: string
   file_url: string | null
   priority: string
-  service_impacted: boolean
   start_time: string
-  end_time: string
+  end_time: string | null
   creator: string
+  phone_number: string
   status: string
   created_at: string
 }
@@ -64,9 +64,16 @@ export default function AdminDashboard() {
 
   const updateFormStatus = async (formId: string, newStatus: string) => {
     try {
+      const updateData: any = { status: newStatus }
+      
+      // Auto-update end_time when status is changed to "Closed"
+      if (newStatus === 'Closed') {
+        updateData.end_time = new Date().toISOString()
+      }
+
       const { error } = await supabase
         .from('forms')
-        .update({ status: newStatus })
+        .update(updateData)
         .eq('id', formId)
 
       if (error) {
@@ -75,7 +82,11 @@ export default function AdminDashboard() {
 
       // Update local state
       setForms(forms.map(form => 
-        form.id === formId ? { ...form, status: newStatus } : form
+        form.id === formId ? { 
+          ...form, 
+          status: newStatus,
+          end_time: newStatus === 'Closed' ? new Date().toISOString() : form.end_time
+        } : form
       ))
 
       alert('Status updated successfully')
@@ -92,11 +103,11 @@ export default function AdminDashboard() {
       'Country': form.country,
       'Issue': form.issue,
       'Priority': form.priority,
-      'Service Impacted': form.service_impacted ? 'Yes' : 'No',
       'Status': form.status,
       'Creator': form.creator,
+      'Phone Number': form.phone_number,
       'Start Time': new Date(form.start_time).toLocaleString(),
-      'End Time': new Date(form.end_time).toLocaleString(),
+      'End Time': form.end_time ? new Date(form.end_time).toLocaleString() : 'Not closed yet',
       'Created At': new Date(form.created_at).toLocaleString(),
       'Issue Description': form.issue_description,
       'KPIs Affected': form.kpis_affected,
@@ -120,9 +131,8 @@ export default function AdminDashboard() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'High': return 'bg-red-100 text-red-800'
-      case 'Medium': return 'bg-yellow-100 text-yellow-800'
-      case 'Low': return 'bg-green-100 text-green-800'
+      case 'Urgent': return 'bg-red-100 text-red-800'
+      case 'Normal': return 'bg-green-100 text-green-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -153,8 +163,8 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600">Manage form submissions</p>
+              <h1 className="text-2xl font-bold text-gray-900">Vietnam Technical Support Center</h1>
+              <p className="text-gray-600">Viettel Oversea Markets</p>
             </div>
             <div className="flex space-x-4">
               <button
@@ -325,16 +335,18 @@ export default function AdminDashboard() {
                   </span>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Service Impacted</label>
-                  <p className="text-sm text-gray-900">{selectedForm.service_impacted ? 'Yes' : 'No'}</p>
-                </div>
-                <div>
                   <label className="block text-sm font-medium text-gray-700">Start Time</label>
                   <p className="text-sm text-gray-900">{new Date(selectedForm.start_time).toLocaleString()}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">End Time</label>
-                  <p className="text-sm text-gray-900">{new Date(selectedForm.end_time).toLocaleString()}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedForm.end_time ? new Date(selectedForm.end_time).toLocaleString() : 'Not closed yet'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                  <p className="text-sm text-gray-900">{selectedForm.phone_number}</p>
                 </div>
               </div>
 

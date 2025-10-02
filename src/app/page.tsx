@@ -8,7 +8,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">NPO Form Manager</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Vietnam Technical Support Center</h1>
           <p className="text-gray-600">Choose how you want to access the system</p>
         </div>
         
@@ -42,7 +42,7 @@ export default function Home() {
         
         <div className="mt-8 text-center">
           <p className="text-xs text-gray-500">
-            Secure form management system
+            Viettel Oversea Markets
           </p>
         </div>
       </div>

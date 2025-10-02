@@ -9,11 +9,11 @@ CREATE TABLE IF NOT EXISTS forms (
   counter_evaluation TEXT NOT NULL,
   optimization_actions TEXT NOT NULL,
   file_url TEXT,
-  priority TEXT NOT NULL CHECK (priority IN ('High', 'Medium', 'Low')),
-  service_impacted BOOLEAN NOT NULL,
+  priority TEXT NOT NULL CHECK (priority IN ('Normal', 'Urgent')),
   start_time TIMESTAMP WITH TIME ZONE NOT NULL,
-  end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+  end_time TIMESTAMP WITH TIME ZONE,
   creator TEXT NOT NULL,
+  phone_number TEXT NOT NULL,
   status TEXT DEFAULT 'Inprocess' CHECK (status IN ('Inprocess', 'Closed')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
