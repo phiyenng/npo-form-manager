@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Users, Shield } from 'lucide-react'
+import { Users, Shield, FileText } from 'lucide-react'
 
 export default function Home() {
   return (
@@ -23,6 +23,19 @@ export default function Home() {
             <div className="flex-1">
               <h2 className="text-lg font-semibold text-gray-900">Submit Form</h2>
               <p className="text-gray-600 text-sm">Fill out a new form as a regular user</p>
+            </div>
+          </Link>
+          
+          <Link 
+            href="/user/dashboard"
+            className="w-full bg-white hover:bg-gray-100 border border-gray-200 rounded-lg p-6 flex items-center space-x-4 transition-colors shadow-sm hover:shadow-md"
+          >
+            <div className="bg-green-100 p-3 rounded-full">
+              <FileText className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-semibold text-gray-900">My Forms</h2>
+              <p className="text-gray-600 text-sm">View and manage your submitted forms</p>
             </div>
           </Link>
           

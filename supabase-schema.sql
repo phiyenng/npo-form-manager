@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS forms (
   end_time TIMESTAMP WITH TIME ZONE,
   creator TEXT NOT NULL,
   phone_number TEXT NOT NULL,
-  status TEXT DEFAULT 'Inprocess' CHECK (status IN ('Inprocess', 'Closed')),
+  status TEXT DEFAULT 'Inprocess' CHECK (status IN ('Inprocess', 'Closed', 'Withdrawn')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

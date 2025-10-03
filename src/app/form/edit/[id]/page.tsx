@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -23,7 +23,6 @@ const formSchema = z.object({
   phone_number: z.string().min(1, 'Phone number is required'),
 })
 
-
 const operatorCountryMap: Record<string, string> = {
   'Bitel': 'Peru',
   'Natcom': 'Haiti', 
@@ -37,10 +36,15 @@ const operatorCountryMap: Record<string, string> = {
   'Metfone': 'Cambodia'
 }
 
-export default function FormPage() {
+export default function EditFormPage() {
   const router = useRouter()
+  const params = useParams()
+  const formId = params.id as string
+  
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [currentFileUrl, setCurrentFileUrl] = useState<string | null>(null)
   
   const {
     register,
@@ -60,6 +64,69 @@ export default function FormPage() {
       setValue('country', operatorCountryMap[selectedOperator])
     }
   }, [selectedOperator, setValue])
+
+  // Load existing form data
+  useEffect(() => {
+    const loadFormData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('forms')
+          .select('*')
+          .eq('id', formId)
+          .single()
+
+        if (error) {
+          throw error
+        }
+
+        if (!data) {
+          alert('Form not found')
+          router.push('/user/dashboard')
+          return
+        }
+
+        // Check if user can edit this form (only if status is Inprocess)
+        if (data.status !== 'Inprocess') {
+          alert('This form cannot be edited as it is not in process')
+          router.push('/user/dashboard')
+          return
+        }
+
+        // Check if user owns this form
+        const userEmail = localStorage.getItem('userEmail')
+        const userPhone = localStorage.getItem('userPhone')
+        
+        if (data.creator !== userEmail && data.phone_number !== userPhone) {
+          alert('You can only edit your own forms')
+          router.push('/user/dashboard')
+          return
+        }
+
+        // Populate form with existing data
+        setValue('operator', data.operator)
+        setValue('country', data.country)
+        setValue('issue', data.issue)
+        setValue('issue_description', data.issue_description)
+        setValue('kpis_affected', data.kpis_affected)
+        setValue('counter_evaluation', data.counter_evaluation)
+        setValue('optimization_actions', data.optimization_actions)
+        setValue('priority', data.priority)
+        setValue('start_time', new Date(data.start_time).toISOString().slice(0, 16))
+        setValue('creator', data.creator)
+        setValue('phone_number', data.phone_number)
+        
+        setCurrentFileUrl(data.file_url)
+      } catch (error) {
+        console.error('Error loading form:', error)
+        alert('Error loading form data')
+        router.push('/user/dashboard')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadFormData()
+  }, [formId, setValue, router])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -100,7 +167,7 @@ export default function FormPage() {
     setIsSubmitting(true)
     
     try {
-      let fileUrl = null
+      let fileUrl = currentFileUrl
       
       if (selectedFile) {
         fileUrl = await uploadFile(selectedFile)
@@ -110,29 +177,36 @@ export default function FormPage() {
       
       const { error } = await supabase
         .from('forms')
-        .insert({
+        .update({
           ...data,
           country,
           file_url: fileUrl,
-          status: 'Inprocess'
         })
+        .eq('id', formId)
       
       if (error) {
         throw error
       }
       
-      // Store user info for dashboard access
-      localStorage.setItem('userEmail', data.creator)
-      localStorage.setItem('userPhone', data.phone_number)
-      
-      alert('Form submitted successfully!')
+      alert('Form updated successfully!')
       router.push('/user/dashboard')
     } catch (error) {
-      console.error('Error submitting form:', error)
-      alert('Error submitting form. Please try again.')
+      console.error('Error updating form:', error)
+      alert('Error updating form. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <Clock className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading form...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -140,15 +214,14 @@ export default function FormPage() {
       <div className="max-w-2xl mx-auto px-4">
         <div className="mb-6">
           <Link 
-            href="/"
+            href="/user/dashboard"
             className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
+            Back to Dashboard
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Submit New Form</h1>
-          <p className="text-gray-600 mt-1">Fill out all required fields to submit your form</p>
-          
+          <h1 className="text-2xl font-bold text-gray-900">Edit Form</h1>
+          <p className="text-gray-600 mt-1">Update your form information</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-lg shadow-sm p-6 space-y-6">
@@ -274,6 +347,19 @@ export default function FormPage() {
           {/* File Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Dump/OSS KPIs Data</label>
+            {currentFileUrl && !selectedFile && (
+              <div className="mb-2 p-2 bg-gray-100 rounded-md">
+                <p className="text-sm text-gray-600">Current file: </p>
+                <a
+                  href={currentFileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 text-sm"
+                >
+                  View Current File
+                </a>
+              </div>
+            )}
             <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:border-gray-400 transition-colors">
               <input
                 type="file"
@@ -285,7 +371,7 @@ export default function FormPage() {
               <label htmlFor="file-upload" className="cursor-pointer">
                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-600">
-                  {selectedFile ? selectedFile.name : 'Click to upload file'}
+                  {selectedFile ? selectedFile.name : 'Click to upload new file (optional)'}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   PDF, DOC, TXT, JPG, PNG, XLS, XLSX, CSV (max 50MB)
@@ -311,7 +397,6 @@ export default function FormPage() {
               <p className="text-red-500 text-sm mt-1">{errors.priority.message}</p>
             )}
           </div>
-
 
           {/* Start Time */}
           <div>
@@ -370,10 +455,10 @@ export default function FormPage() {
               {isSubmitting ? (
                 <>
                   <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Submitting...
+                  Updating...
                 </>
               ) : (
-                'Submit Form'
+                'Update Form'
               )}
             </button>
           </div>

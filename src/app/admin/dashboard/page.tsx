@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Download, LogOut, Eye, FileText, Clock, CheckCircle, XCircle } from 'lucide-react'
+import { Download, LogOut, Eye, FileText, Clock, CheckCircle, XCircle, Filter, X } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
 interface FormData {
@@ -28,8 +28,19 @@ interface FormData {
 export default function AdminDashboard() {
   const router = useRouter()
   const [forms, setForms] = useState<FormData[]>([])
+  const [filteredForms, setFilteredForms] = useState<FormData[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedForm, setSelectedForm] = useState<FormData | null>(null)
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    operator: '',
+    priority: '',
+    status: '',
+    startTimeFrom: '',
+    startTimeTo: ''
+  })
+  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     // Check if user is admin
@@ -54,6 +65,7 @@ export default function AdminDashboard() {
       }
 
       setForms(data || [])
+      setFilteredForms(data || [])
     } catch (error) {
       console.error('Error fetching forms:', error)
       alert('Error loading forms')
@@ -81,13 +93,16 @@ export default function AdminDashboard() {
       }
 
       // Update local state
-      setForms(forms.map(form => 
+      const updatedForms = forms.map(form => 
         form.id === formId ? { 
           ...form, 
           status: newStatus,
           end_time: newStatus === 'Closed' ? new Date().toISOString() : form.end_time
         } : form
-      ))
+      )
+      
+      setForms(updatedForms)
+      applyFilters(updatedForms)
 
       alert('Status updated successfully')
     } catch (error) {
@@ -96,8 +111,67 @@ export default function AdminDashboard() {
     }
   }
 
+  const applyFilters = (formsToFilter: FormData[] = forms) => {
+    let filtered = [...formsToFilter]
+
+    // Filter by operator
+    if (filters.operator) {
+      filtered = filtered.filter(form => form.operator === filters.operator)
+    }
+
+    // Filter by priority
+    if (filters.priority) {
+      filtered = filtered.filter(form => form.priority === filters.priority)
+    }
+
+    // Filter by status
+    if (filters.status) {
+      filtered = filtered.filter(form => form.status === filters.status)
+    }
+
+    // Filter by start time range
+    if (filters.startTimeFrom) {
+      filtered = filtered.filter(form => 
+        new Date(form.start_time) >= new Date(filters.startTimeFrom)
+      )
+    }
+
+    if (filters.startTimeTo) {
+      filtered = filtered.filter(form => 
+        new Date(form.start_time) <= new Date(filters.startTimeTo)
+      )
+    }
+
+    setFilteredForms(filtered)
+  }
+
+  const handleFilterChange = (key: string, value: string) => {
+    const newFilters = { ...filters, [key]: value }
+    setFilters(newFilters)
+  }
+
+  const clearFilters = () => {
+    setFilters({
+      operator: '',
+      priority: '',
+      status: '',
+      startTimeFrom: '',
+      startTimeTo: ''
+    })
+    setFilteredForms(forms)
+  }
+
+  const hasActiveFilters = () => {
+    return Object.values(filters).some(value => value !== '')
+  }
+
+  // Apply filters when filters change
+  useEffect(() => {
+    applyFilters()
+  }, [filters])
+
   const exportToExcel = () => {
-    const exportData = forms.map(form => ({
+    const exportData = filteredForms.map(form => ({
       'ID': form.id,
       'Operator': form.operator,
       'Country': form.country,
@@ -194,7 +268,7 @@ export default function AdminDashboard() {
               <FileText className="w-8 h-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Forms</p>
-                <p className="text-2xl font-bold text-gray-900">{forms.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{filteredForms.length}</p>
               </div>
             </div>
           </div>
@@ -204,7 +278,7 @@ export default function AdminDashboard() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">In Process</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {forms.filter(f => f.status === 'Inprocess').length}
+                  {filteredForms.filter(f => f.status === 'Inprocess').length}
                 </p>
               </div>
             </div>
@@ -215,23 +289,139 @@ export default function AdminDashboard() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Closed</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {forms.filter(f => f.status === 'Closed').length}
+                  {filteredForms.filter(f => f.status === 'Closed').length}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-sm mb-6">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="text-lg font-medium text-gray-900">Filters</h2>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center space-x-1 text-sm"
+              >
+                <Filter className="w-4 h-4" />
+                <span>{showFilters ? 'Hide' : 'Show'} Filters</span>
+              </button>
+              {hasActiveFilters() && (
+                <button
+                  onClick={clearFilters}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md flex items-center space-x-1 text-sm"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Clear</span>
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {showFilters && (
+            <div className="px-6 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {/* Operator Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Operator</label>
+                  <select
+                    value={filters.operator}
+                    onChange={(e) => handleFilterChange('operator', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                  >
+                    <option value="">All Operators</option>
+                    <option value="Bitel">Bitel</option>
+                    <option value="Natcom">Natcom</option>
+                    <option value="Nexttel">Nexttel</option>
+                    <option value="Lumitel">Lumitel</option>
+                    <option value="Movitel">Movitel</option>
+                    <option value="Halotel">Halotel</option>
+                    <option value="Unitel">Unitel</option>
+                    <option value="Mytel">Mytel</option>
+                    <option value="Telemor">Telemor</option>
+                    <option value="Metfone">Metfone</option>
+                  </select>
+                </div>
+
+                {/* Priority Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <select
+                    value={filters.priority}
+                    onChange={(e) => handleFilterChange('priority', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                  >
+                    <option value="">All Priorities</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                </div>
+
+                {/* Status Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                  >
+                    <option value="">All Status</option>
+                    <option value="Inprocess">Inprocess</option>
+                    <option value="Closed">Closed</option>
+                    <option value="Withdrawn">Withdrawn</option>
+                  </select>
+                </div>
+
+                {/* Start Time From */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Time From</label>
+                  <input
+                    type="datetime-local"
+                    value={filters.startTimeFrom}
+                    onChange={(e) => handleFilterChange('startTimeFrom', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                  />
+                </div>
+
+                {/* Start Time To */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Time To</label>
+                  <input
+                    type="datetime-local"
+                    value={filters.startTimeTo}
+                    onChange={(e) => handleFilterChange('startTimeTo', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Forms Table */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Form Submissions</h2>
+            <h2 className="text-lg font-medium text-gray-900">
+              Form Submissions {hasActiveFilters() && `(${filteredForms.length} of ${forms.length})`}
+            </h2>
           </div>
           
-          {forms.length === 0 ? (
+          {filteredForms.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No forms submitted yet</p>
+              <p className="text-gray-500">
+                {forms.length === 0 ? 'No forms submitted yet' : 'No forms match the current filters'}
+              </p>
+              {hasActiveFilters() && (
+                <button
+                  onClick={clearFilters}
+                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                >
+                  Clear Filters
+                </button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -256,7 +446,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {forms.map((form) => (
+                  {filteredForms.map((form) => (
                     <tr key={form.id} className="hover:bg-gray-100">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
