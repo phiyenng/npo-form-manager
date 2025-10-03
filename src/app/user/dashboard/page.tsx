@@ -127,6 +127,7 @@ export default function UserDashboard() {
     switch (status) {
       case 'Closed': return 'bg-green-100 text-green-800'
       case 'Inprocess': return 'bg-blue-100 text-blue-800'
+      case 'Accessed': return 'bg-purple-100 text-purple-800'
       case 'Withdrawn': return 'bg-gray-100 text-gray-800'
       default: return 'bg-gray-100 text-gray-800'
     }
@@ -136,6 +137,7 @@ export default function UserDashboard() {
     switch (status) {
       case 'Closed': return <CheckCircle className="w-4 h-4" />
       case 'Inprocess': return <Clock className="w-4 h-4" />
+      case 'Accessed': return <Eye className="w-4 h-4" />
       case 'Withdrawn': return <XCircle className="w-4 h-4" />
       default: return <Clock className="w-4 h-4" />
     }
@@ -232,7 +234,7 @@ export default function UserDashboard() {
 
         {/* Stats */}
         {!showSearchForm && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center">
               <FileText className="w-8 h-8 text-blue-600" />
@@ -260,6 +262,17 @@ export default function UserDashboard() {
                 <p className="text-sm font-medium text-gray-600">Closed</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {forms.filter(f => f.status === 'Closed').length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <Eye className="w-8 h-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Accessed</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {forms.filter(f => f.status === 'Accessed').length}
                 </p>
               </div>
             </div>

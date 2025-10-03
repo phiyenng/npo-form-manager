@@ -215,6 +215,8 @@ export default function AdminDashboard() {
     switch (status) {
       case 'Closed': return 'bg-green-100 text-green-800'
       case 'Inprocess': return 'bg-blue-100 text-blue-800'
+      case 'Accessed': return 'bg-purple-100 text-purple-800'
+      case 'Withdrawn': return 'bg-gray-100 text-gray-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -262,7 +264,7 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center">
               <FileText className="w-8 h-8 text-blue-600" />
@@ -279,6 +281,17 @@ export default function AdminDashboard() {
                 <p className="text-sm font-medium text-gray-600">In Process</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {filteredForms.filter(f => f.status === 'Inprocess').length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <CheckCircle className="w-8 h-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Accessed</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {filteredForms.filter(f => f.status === 'Accessed').length}
                 </p>
               </div>
             </div>
@@ -369,6 +382,7 @@ export default function AdminDashboard() {
                   >
                     <option value="">All Status</option>
                     <option value="Inprocess">Inprocess</option>
+                    <option value="Accessed">Accessed</option>
                     <option value="Closed">Closed</option>
                     <option value="Withdrawn">Withdrawn</option>
                   </select>
@@ -470,7 +484,9 @@ export default function AdminDashboard() {
                           className={`text-xs font-semibold rounded-full px-2 py-1 border-0 ${getStatusColor(form.status)}`}
                         >
                           <option value="Inprocess">Inprocess</option>
+                          <option value="Accessed">Accessed</option>
                           <option value="Closed">Closed</option>
+                          <option value="Withdrawn">Withdrawn</option>
                         </select>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
