@@ -31,31 +31,27 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(false)
   const [selectedForm, setSelectedForm] = useState<FormData | null>(null)
   const [userEmail, setUserEmail] = useState('')
-  const [userPhone, setUserPhone] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [showSearchForm, setShowSearchForm] = useState(true)
 
   useEffect(() => {
     // Check if user info is already stored
     const storedEmail = localStorage.getItem('userEmail')
-    const storedPhone = localStorage.getItem('userPhone')
     
-    if (storedEmail && storedPhone) {
+    if (storedEmail) {
       setUserEmail(storedEmail)
-      setUserPhone(storedPhone)
       setShowSearchForm(false)
-      fetchUserForms(storedEmail, storedPhone)
+      fetchUserForms(storedEmail)
     }
   }, [])
 
-  const fetchUserForms = async (email: string, phone: string) => {
+  const fetchUserForms = async (email: string) => {
     setIsSearching(true)
     try {
       const { data, error } = await supabase
         .from('forms')
         .select('*')
         .eq('creator', email)
-        .eq('phone_number', phone)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -74,25 +70,22 @@ export default function UserDashboard() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!userEmail.trim() || !userPhone.trim()) {
-      alert('Please enter both email and phone number')
+    if (!userEmail.trim()) {
+      alert('Please enter your email address')
       return
     }
     
     // Store user info for future visits
     localStorage.setItem('userEmail', userEmail)
-    localStorage.setItem('userPhone', userPhone)
     
-    await fetchUserForms(userEmail, userPhone)
+    await fetchUserForms(userEmail)
   }
 
   const handleNewSearch = () => {
     setShowSearchForm(true)
     setForms([])
     setUserEmail('')
-    setUserPhone('')
     localStorage.removeItem('userEmail')
-    localStorage.removeItem('userPhone')
   }
 
   const withdrawForm = async (formId: string) => {
@@ -202,37 +195,21 @@ export default function UserDashboard() {
         {showSearchForm && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Find Your Forms</h2>
-            <p className="text-gray-600 mb-6">Enter your email and phone number to view your submitted forms</p>
+            <p className="text-gray-600 mb-6">Enter your email address to view your submitted forms</p>
             
             <form onSubmit={handleSearch} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={userEmail}
-                    onChange={(e) => setUserEmail(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                    placeholder="Enter your email address"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={userPhone}
-                    onChange={(e) => setUserPhone(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                    placeholder="Enter your phone number"
-                    required
-                  />
-                </div>
+              <div className="max-w-md">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={userEmail}
+                  onChange={(e) => setUserEmail(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  placeholder="Enter your email address"
+                  required
+                />
               </div>
               
               <button
