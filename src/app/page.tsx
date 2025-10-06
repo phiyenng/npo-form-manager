@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Users, Shield, FileText } from 'lucide-react'
 
 export default function Home() {
@@ -8,6 +9,15 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
+          <div className="mb-6 flex justify-center">
+            <Image
+              src="/zte-customers-support/zte-logo.svg"
+              alt="ZTE Logo"
+              width={100}
+              height={40}
+              className="h-20 w-auto"
+            />
+          </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Viettel Technical Support System</h1>
           <p className="text-gray-600">Choose how you want to access the system</p>
         </div>
