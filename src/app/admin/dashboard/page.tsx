@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Download, LogOut, Eye, FileText, Clock, CheckCircle, XCircle, Filter, X } from 'lucide-react'
+import { Download, LogOut, Eye, FileText, Clock, CheckCircle, XCircle, Filter, X, Trash2 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
 interface FormData {
@@ -111,6 +111,33 @@ export default function AdminDashboard() {
     }
   }
 
+  const deleteForm = async (formId: string) => {
+    if (!confirm('Are you sure you want to delete this form? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('forms')
+        .delete()
+        .eq('id', formId)
+
+      if (error) {
+        throw error
+      }
+
+      // Update local state
+      const updatedForms = forms.filter(form => form.id !== formId)
+      setForms(updatedForms)
+      applyFilters(updatedForms)
+
+      alert('Form deleted successfully')
+    } catch (error) {
+      console.error('Error deleting form:', error)
+      alert('Error deleting form')
+    }
+  }
+
   const applyFilters = (formsToFilter: FormData[] = forms) => {
     let filtered = [...formsToFilter]
 
@@ -215,8 +242,7 @@ export default function AdminDashboard() {
     switch (status) {
       case 'Closed': return 'bg-green-100 text-green-800'
       case 'Inprocess': return 'bg-blue-100 text-blue-800'
-      case 'Accessed': return 'bg-purple-100 text-purple-800'
-      case 'Withdrawn': return 'bg-gray-100 text-gray-800'
+      case 'Accepted': return 'bg-purple-100 text-purple-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -289,9 +315,9 @@ export default function AdminDashboard() {
             <div className="flex items-center">
               <CheckCircle className="w-8 h-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Accessed</p>
+                <p className="text-sm font-medium text-gray-600">Accepted</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {filteredForms.filter(f => f.status === 'Accessed').length}
+                  {filteredForms.filter(f => f.status === 'Accepted').length}
                 </p>
               </div>
             </div>
@@ -382,9 +408,8 @@ export default function AdminDashboard() {
                   >
                     <option value="">All Status</option>
                     <option value="Inprocess">Inprocess</option>
-                    <option value="Accessed">Accessed</option>
+                    <option value="Accepted">Accepted</option>
                     <option value="Closed">Closed</option>
-                    <option value="Withdrawn">Withdrawn</option>
                   </select>
                 </div>
 
@@ -484,22 +509,30 @@ export default function AdminDashboard() {
                           className={`text-xs font-semibold rounded-full px-2 py-1 border-0 ${getStatusColor(form.status)}`}
                         >
                           <option value="Inprocess">Inprocess</option>
-                          <option value="Accessed">Accessed</option>
+                          <option value="Accepted">Accepted</option>
                           <option value="Closed">Closed</option>
-                          <option value="Withdrawn">Withdrawn</option>
                         </select>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(form.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => setSelectedForm(form)}
-                          className="text-indigo-600 hover:text-indigo-900 flex items-center space-x-1"
-                        >
-                          <Eye className="w-4 h-4" />
-                          <span>View</span>
-                        </button>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => setSelectedForm(form)}
+                            className="text-indigo-600 hover:text-indigo-900 flex items-center space-x-1"
+                          >
+                            <Eye className="w-4 h-4" />
+                            <span>View</span>
+                          </button>
+                          <button
+                            onClick={() => deleteForm(form.id)}
+                            className="text-red-600 hover:text-red-900 flex items-center space-x-1"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

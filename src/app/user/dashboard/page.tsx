@@ -33,6 +33,7 @@ export default function UserDashboard() {
   const [userEmail, setUserEmail] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [showSearchForm, setShowSearchForm] = useState(true)
+  const [showAllForms, setShowAllForms] = useState(false)
 
   useEffect(() => {
     // Check if user info is already stored
@@ -60,9 +61,33 @@ export default function UserDashboard() {
 
       setForms(data || [])
       setShowSearchForm(false)
+      setShowAllForms(false)
     } catch (error) {
       console.error('Error fetching forms:', error)
       alert('Error loading your forms')
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const fetchAllForms = async () => {
+    setIsSearching(true)
+    try {
+      const { data, error } = await supabase
+        .from('forms')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        throw error
+      }
+
+      setForms(data || [])
+      setShowSearchForm(false)
+      setShowAllForms(true)
+    } catch (error) {
+      console.error('Error fetching all forms:', error)
+      alert('Error loading forms')
     } finally {
       setIsSearching(false)
     }
@@ -81,11 +106,9 @@ export default function UserDashboard() {
     await fetchUserForms(userEmail)
   }
 
-  const handleNewSearch = () => {
-    setShowSearchForm(true)
-    setForms([])
-    setUserEmail('')
-    localStorage.removeItem('userEmail')
+
+  const handleViewAllForms = () => {
+    fetchAllForms()
   }
 
   const withdrawForm = async (formId: string) => {
@@ -127,7 +150,7 @@ export default function UserDashboard() {
     switch (status) {
       case 'Closed': return 'bg-green-100 text-green-800'
       case 'Inprocess': return 'bg-blue-100 text-blue-800'
-      case 'Accessed': return 'bg-purple-100 text-purple-800'
+      case 'Accepted': return 'bg-purple-100 text-purple-800'
       case 'Withdrawn': return 'bg-gray-100 text-gray-800'
       default: return 'bg-gray-100 text-gray-800'
     }
@@ -137,7 +160,7 @@ export default function UserDashboard() {
     switch (status) {
       case 'Closed': return <CheckCircle className="w-4 h-4" />
       case 'Inprocess': return <Clock className="w-4 h-4" />
-      case 'Accessed': return <Eye className="w-4 h-4" />
+      case 'Accepted': return <Eye className="w-4 h-4" />
       case 'Withdrawn': return <XCircle className="w-4 h-4" />
       default: return <Clock className="w-4 h-4" />
     }
@@ -168,8 +191,12 @@ export default function UserDashboard() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Home
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">My Form Submissions</h1>
-              <p className="text-gray-600">View and manage your submitted forms</p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {showAllForms ? 'All Form Submissions' : 'My Form Submissions'}
+              </h1>
+              <p className="text-gray-600">
+                {showAllForms ? 'View all forms in the system' : 'View and manage your submitted forms'}
+              </p>
             </div>
             <div className="flex space-x-4">
               <Link
@@ -179,12 +206,28 @@ export default function UserDashboard() {
                 <FileText className="w-4 h-4" />
                 <span>Submit New Form</span>
               </Link>
-              {!showSearchForm && (
+              {!showSearchForm && !showAllForms && (
                 <button
-                  onClick={handleNewSearch}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
+                  onClick={handleViewAllForms}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
                 >
-                  <span>Search Different User</span>
+                  <span>View All Forms</span>
+                </button>
+              )}
+              {showAllForms && (
+                <button
+                  onClick={() => {
+                    setShowAllForms(false)
+                    if (userEmail) {
+                      fetchUserForms(userEmail)
+                    } else {
+                      setShowSearchForm(true)
+                      setForms([])
+                    }
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
+                >
+                  <span>Back to My Forms</span>
                 </button>
               )}
             </div>
@@ -239,7 +282,9 @@ export default function UserDashboard() {
             <div className="flex items-center">
               <FileText className="w-8 h-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Forms</p>
+                <p className="text-sm font-medium text-gray-600">
+                  {showAllForms ? 'Total Forms' : 'My Forms'}
+                </p>
                 <p className="text-2xl font-bold text-gray-900">{forms.length}</p>
               </div>
             </div>
@@ -270,9 +315,9 @@ export default function UserDashboard() {
             <div className="flex items-center">
               <Eye className="w-8 h-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Accessed</p>
+                <p className="text-sm font-medium text-gray-600">Accepted</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {forms.filter(f => f.status === 'Accessed').length}
+                  {forms.filter(f => f.status === 'Accepted').length}
                 </p>
               </div>
             </div>
@@ -317,6 +362,11 @@ export default function UserDashboard() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Form Details
                     </th>
+                    {showAllForms && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Creator
+                      </th>
+                    )}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Priority
                     </th>
@@ -327,7 +377,7 @@ export default function UserDashboard() {
                       Created
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      {showAllForms ? 'View' : 'Actions'}
                     </th>
                   </tr>
                 </thead>
@@ -344,6 +394,11 @@ export default function UserDashboard() {
                           </div>
                         </div>
                       </td>
+                      {showAllForms && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {form.creator}
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(form.priority)}`}>
                           {form.priority}
@@ -358,8 +413,38 @@ export default function UserDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(form.created_at).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
+                      {!showAllForms ? (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => setSelectedForm(form)}
+                              className="text-indigo-600 hover:text-indigo-900 flex items-center space-x-1"
+                            >
+                              <Eye className="w-4 h-4" />
+                              <span>View</span>
+                            </button>
+                            {form.status === 'Inprocess' && (
+                              <>
+                                <Link
+                                  href={`/form/edit/${form.id}`}
+                                  className="text-green-600 hover:text-green-900 flex items-center space-x-1"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                  <span>Edit</span>
+                                </Link>
+                                <button
+                                  onClick={() => withdrawForm(form.id)}
+                                  className="text-red-600 hover:text-red-900 flex items-center space-x-1"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>Withdraw</span>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      ) : (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button
                             onClick={() => setSelectedForm(form)}
                             className="text-indigo-600 hover:text-indigo-900 flex items-center space-x-1"
@@ -367,26 +452,8 @@ export default function UserDashboard() {
                             <Eye className="w-4 h-4" />
                             <span>View</span>
                           </button>
-                          {form.status === 'Inprocess' && (
-                            <>
-                              <Link
-                                href={`/form/edit/${form.id}`}
-                                className="text-green-600 hover:text-green-900 flex items-center space-x-1"
-                              >
-                                <Edit className="w-4 h-4" />
-                                <span>Edit</span>
-                              </Link>
-                              <button
-                                onClick={() => withdrawForm(form.id)}
-                                className="text-red-600 hover:text-red-900 flex items-center space-x-1"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                <span>Withdraw</span>
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
