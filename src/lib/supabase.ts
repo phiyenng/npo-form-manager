@@ -11,6 +11,7 @@ export type Database = {
       forms: {
         Row: {
           id: string
+          form_id: string
           operator: string
           country: string
           issue: string
@@ -29,6 +30,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          form_id?: string
           operator: string
           country: string
           issue: string
@@ -47,6 +49,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          form_id?: string
           operator?: string
           country?: string
           issue?: string

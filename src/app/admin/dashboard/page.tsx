@@ -112,7 +112,7 @@ export default function AdminDashboard() {
   }
 
   const deleteForm = async (formId: string) => {
-    if (!confirm('Are you sure you want to delete this form? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
       return
     }
 
@@ -131,10 +131,10 @@ export default function AdminDashboard() {
       setForms(updatedForms)
       applyFilters(updatedForms)
 
-      alert('Form deleted successfully')
+      alert('Ticket deleted successfully')
     } catch (error) {
-      console.error('Error deleting form:', error)
-      alert('Error deleting form')
+      console.error('Error deleting ticket:', error)
+      alert('Error deleting ticket')
     }
   }
 
@@ -219,9 +219,9 @@ export default function AdminDashboard() {
 
     const ws = XLSX.utils.json_to_sheet(exportData)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Forms')
+    XLSX.utils.book_append_sheet(wb, ws, 'Tickets')
     
-    const fileName = `forms_export_${new Date().toISOString().split('T')[0]}.xlsx`
+    const fileName = `tickets_export_${new Date().toISOString().split('T')[0]}.xlsx`
     XLSX.writeFile(wb, fileName)
   }
 
@@ -295,7 +295,7 @@ export default function AdminDashboard() {
             <div className="flex items-center">
               <FileText className="w-8 h-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Forms</p>
+                <p className="text-sm font-medium text-gray-600">Total Tickets</p>
                 <p className="text-2xl font-bold text-gray-900">{filteredForms.length}</p>
               </div>
             </div>
@@ -443,7 +443,7 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-medium text-gray-900">
-              Form Submissions {hasActiveFilters() && `(${filteredForms.length} of ${forms.length})`}
+              Ticket Submissions {hasActiveFilters() && `(${filteredForms.length} of ${forms.length})`}
             </h2>
           </div>
           
@@ -451,7 +451,7 @@ export default function AdminDashboard() {
             <div className="text-center py-12">
               <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">
-                {forms.length === 0 ? 'No forms submitted yet' : 'No forms match the current filters'}
+                {forms.length === 0 ? 'No tickets submitted yet' : 'No tickets match the current filters'}
               </p>
               {hasActiveFilters() && (
                 <button
@@ -468,7 +468,7 @@ export default function AdminDashboard() {
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Form Details
+                      Ticket Details
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Priority
@@ -548,7 +548,7 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">Form Details</h3>
+              <h3 className="text-lg font-medium text-gray-900">Ticket Details</h3>
               <button
                 onClick={() => setSelectedForm(null)}
                 className="text-gray-400 hover:text-gray-600"

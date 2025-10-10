@@ -31,8 +31,8 @@ export default function Home() {
               <Users className="w-6 h-6 text-blue-600" />
             </div>
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-gray-900">Submit Form</h2>
-              <p className="text-gray-600 text-sm">Fill out a new form as a regular user</p>
+              <h2 className="text-lg font-semibold text-gray-900">Submit Ticket</h2>
+              <p className="text-gray-600 text-sm">Fill out a new ticket as a regular user</p>
             </div>
           </Link>
           
@@ -44,8 +44,8 @@ export default function Home() {
               <FileText className="w-6 h-6 text-green-600" />
             </div>
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-gray-900">My Forms</h2>
-              <p className="text-gray-600 text-sm">View and manage your submitted forms</p>
+              <h2 className="text-lg font-semibold text-gray-900">My Tickets</h2>
+              <p className="text-gray-600 text-sm">View and manage your submitted tickets</p>
             </div>
           </Link>
           
@@ -58,7 +58,7 @@ export default function Home() {
             </div>
             <div className="flex-1">
               <h2 className="text-lg font-semibold text-gray-900">Admin Dashboard</h2>
-              <p className="text-gray-600 text-sm">Manage forms and view submissions</p>
+              <p className="text-gray-600 text-sm">Manage tickets and view submissions</p>
             </div>
           </Link>
         </div>

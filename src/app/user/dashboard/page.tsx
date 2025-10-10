@@ -63,8 +63,8 @@ export default function UserDashboard() {
       setShowSearchForm(false)
       setShowAllForms(false)
     } catch (error) {
-      console.error('Error fetching forms:', error)
-      alert('Error loading your forms')
+      console.error('Error fetching tickets:', error)
+      alert('Error loading your tickets')
     } finally {
       setIsSearching(false)
     }
@@ -86,8 +86,8 @@ export default function UserDashboard() {
       setShowSearchForm(false)
       setShowAllForms(true)
     } catch (error) {
-      console.error('Error fetching all forms:', error)
-      alert('Error loading forms')
+      console.error('Error fetching all tickets:', error)
+      alert('Error loading tickets')
     } finally {
       setIsSearching(false)
     }
@@ -112,7 +112,7 @@ export default function UserDashboard() {
   }
 
   const withdrawForm = async (formId: string) => {
-    if (!confirm('Are you sure you want to withdraw this form?')) {
+    if (!confirm('Are you sure you want to withdraw this ticket?')) {
       return
     }
 
@@ -131,10 +131,10 @@ export default function UserDashboard() {
         form.id === formId ? { ...form, status: 'Withdrawn' } : form
       ))
 
-      alert('Form withdrawn successfully')
+      alert('Ticket withdrawn successfully')
     } catch (error) {
-      console.error('Error withdrawing form:', error)
-      alert('Error withdrawing form')
+      console.error('Error withdrawing ticket:', error)
+      alert('Error withdrawing ticket')
     }
   }
 
@@ -171,7 +171,7 @@ export default function UserDashboard() {
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
           <Clock className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-4" />
-          <p className="text-gray-600">Searching for your forms...</p>
+          <p className="text-gray-600">Searching for your tickets...</p>
         </div>
       </div>
     )
@@ -192,10 +192,10 @@ export default function UserDashboard() {
                 Back to Home
               </Link>
               <h1 className="text-2xl font-bold text-gray-900">
-                {showAllForms ? 'All Form Submissions' : 'My Form Submissions'}
+                {showAllForms ? 'All Ticket Submissions' : 'My Ticket Submissions'}
               </h1>
               <p className="text-gray-600">
-                {showAllForms ? 'View all forms in the system' : 'View and manage your submitted forms'}
+                {showAllForms ? 'View all tickets in the system' : 'View and manage your submitted tickets'}
               </p>
             </div>
             <div className="flex space-x-4">
@@ -204,14 +204,14 @@ export default function UserDashboard() {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
               >
                 <FileText className="w-4 h-4" />
-                <span>Submit New Form</span>
+                <span>Submit New Ticket</span>
               </Link>
               {!showSearchForm && !showAllForms && (
                 <button
                   onClick={handleViewAllForms}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
                 >
-                  <span>View All Forms</span>
+                  <span>View All Tickets</span>
                 </button>
               )}
               {showAllForms && (
@@ -227,7 +227,7 @@ export default function UserDashboard() {
                   }}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
                 >
-                  <span>Back to My Forms</span>
+                  <span>Back to My Tickets</span>
                 </button>
               )}
             </div>
@@ -239,8 +239,8 @@ export default function UserDashboard() {
         {/* Search Form */}
         {showSearchForm && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Find Your Forms</h2>
-            <p className="text-gray-600 mb-6">Enter your email address to view your submitted forms</p>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Find Your Tickets</h2>
+            <p className="text-gray-600 mb-6">Enter your email address to view your submitted tickets</p>
             
             <form onSubmit={handleSearch} className="space-y-4">
               <div className="max-w-md">
@@ -268,7 +268,7 @@ export default function UserDashboard() {
                     <span>Searching...</span>
                   </>
                 ) : (
-                  <span>Search Forms</span>
+                  <span>Search Tickets</span>
                 )}
               </button>
             </form>
@@ -283,7 +283,7 @@ export default function UserDashboard() {
               <FileText className="w-8 h-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">
-                  {showAllForms ? 'Total Forms' : 'My Forms'}
+                  {showAllForms ? 'Total Tickets' : 'My Tickets'}
                 </p>
                 <p className="text-2xl font-bold text-gray-900">{forms.length}</p>
               </div>
@@ -340,18 +340,18 @@ export default function UserDashboard() {
         {!showSearchForm && (
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Your Form Submissions</h2>
+            <h2 className="text-lg font-medium text-gray-900">Your Ticket Submissions</h2>
           </div>
           
           {forms.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No forms submitted yet</p>
+              <p className="text-gray-500">No tickets submitted yet</p>
               <Link
                 href="/form"
                 className="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
               >
-                Submit Your First Form
+                Submit Your First Ticket
               </Link>
             </div>
           ) : (
@@ -360,7 +360,7 @@ export default function UserDashboard() {
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Form Details
+                      Ticket Details
                     </th>
                     {showAllForms && (
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -469,7 +469,7 @@ export default function UserDashboard() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">Form Details</h3>
+              <h3 className="text-lg font-medium text-gray-900">Ticket Details</h3>
               <button
                 onClick={() => setSelectedForm(null)}
                 className="text-gray-400 hover:text-gray-600"
