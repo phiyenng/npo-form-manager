@@ -3,11 +3,21 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Eye, Edit, Trash2, Clock, CheckCircle, XCircle, FileText } from 'lucide-react'
+import { ArrowLeft, Eye, Edit, Trash2, Clock, CheckCircle, XCircle, FileText, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
+import ResponseViewModal from '@/components/ResponseViewModal'
+import SolutionViewModal from '@/components/SolutionViewModal'
+
+interface Accepter {
+  id: string
+  name: string
+  email: string
+  phone: string
+}
 
 interface FormData {
   id: string
+  form_id: string
   operator: string
   country: string
   issue: string
@@ -22,6 +32,18 @@ interface FormData {
   creator: string
   phone_number: string
   status: string
+  accepter_id: string | null
+  response: string | null
+  response_created_at: string | null
+  response_updated_at: string | null
+  response_images: string | null
+  is_response_read: boolean
+  solution: string | null
+  solution_created_at: string | null
+  solution_updated_at: string | null
+  solution_images: string | null
+  is_solution_read: boolean
+  accepter?: Accepter
   created_at: string
 }
 
@@ -34,6 +56,13 @@ export default function UserDashboard() {
   const [isSearching, setIsSearching] = useState(false)
   const [showSearchForm, setShowSearchForm] = useState(true)
   const [showAllForms, setShowAllForms] = useState(false)
+  const [showResponseModal, setShowResponseModal] = useState(false)
+  const [showSolutionModal, setShowSolutionModal] = useState(false)
+  const [selectedFormForModal, setSelectedFormForModal] = useState<FormData | null>(null)
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
 
   useEffect(() => {
     // Check if user info is already stored
@@ -51,7 +80,10 @@ export default function UserDashboard() {
     try {
       const { data, error } = await supabase
         .from('forms')
-        .select('*')
+        .select(`
+          *,
+          accepter:accepters(id, name, email, phone)
+        `)
         .eq('creator', email)
         .order('created_at', { ascending: false })
 
@@ -75,7 +107,10 @@ export default function UserDashboard() {
     try {
       const { data, error } = await supabase
         .from('forms')
-        .select('*')
+        .select(`
+          *,
+          accepter:accepters(id, name, email, phone)
+        `)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -135,6 +170,84 @@ export default function UserDashboard() {
     } catch (error) {
       console.error('Error withdrawing ticket:', error)
       alert('Error withdrawing ticket')
+    }
+  }
+
+  const markResponseAsRead = async (formId: string) => {
+    try {
+      const { error } = await supabase
+        .from('forms')
+        .update({ is_response_read: true })
+        .eq('id', formId)
+
+      if (error) {
+        throw error
+      }
+
+      // Update local state
+      setForms(forms.map(form => 
+        form.id === formId ? { ...form, is_response_read: true } : form
+      ))
+    } catch (error) {
+      console.error('Error marking response as read:', error)
+    }
+  }
+
+  const markSolutionAsRead = async (formId: string) => {
+    try {
+      const { error } = await supabase
+        .from('forms')
+        .update({ is_solution_read: true })
+        .eq('id', formId)
+
+      if (error) {
+        throw error
+      }
+
+      // Update local state
+      setForms(forms.map(form => 
+        form.id === formId ? { ...form, is_solution_read: true } : form
+      ))
+    } catch (error) {
+      console.error('Error marking solution as read:', error)
+    }
+  }
+
+  // Pagination logic
+  const totalPages = Math.ceil(forms.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentForms = forms.slice(startIndex, endIndex)
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)))
+  }
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const openResponseModal = (form: FormData) => {
+    setSelectedFormForModal(form)
+    setShowResponseModal(true)
+    if (!form.is_response_read) {
+      markResponseAsRead(form.id)
+    }
+  }
+
+  const openSolutionModal = (form: FormData) => {
+    setSelectedFormForModal(form)
+    setShowSolutionModal(true)
+    if (!form.is_solution_read) {
+      markSolutionAsRead(form.id)
     }
   }
 
@@ -360,49 +473,98 @@ export default function UserDashboard() {
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ticket ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Ticket Details
                     </th>
-                    {showAllForms && (
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Creator
-                      </th>
-                    )}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Priority
+                      Response
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Solution
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
+                      View
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {showAllForms ? 'View' : 'Actions'}
+                      Accepter
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {forms.map((form) => (
+                  {currentForms.map((form) => (
                     <tr key={form.id} className="hover:bg-gray-100">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            {/* Notification dots for unread responses and solutions */}
+                            <div className="flex space-x-1">
+                              {form.response && !form.is_response_read && (
+                                <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0" title="New Response"></div>
+                              )}
+                              {form.solution && !form.is_solution_read && (
+                                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" title="New Solution"></div>
+                              )}
+                            </div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {form.form_id}
+                            </div>
+                          </div>
+                          <div className="mt-1">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(form.priority)}`}>
+                              {form.priority}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
                             {form.issue}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {form.operator} - {form.country}
+                            {form.operator} - {form.country} | {form.creator}
                           </div>
                         </div>
                       </td>
-                      {showAllForms && (
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {form.creator}
-                        </td>
-                      )}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(form.priority)}`}>
-                          {form.priority}
-                        </span>
+                        {form.response ? (
+                          <button
+                            onClick={() => openResponseModal(form)}
+                            className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                            <span>View Response</span>
+                            {!form.is_response_read && (
+                              <span className="bg-red-500 text-white text-xs px-1 py-0.5 rounded-full">New</span>
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-sm">No response yet</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {form.solution ? (
+                          <button
+                            onClick={() => openSolutionModal(form)}
+                            className="text-green-600 hover:text-green-800 text-sm flex items-center space-x-1"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span>View Solution</span>
+                            {!form.is_solution_read && (
+                              <span className="bg-green-500 text-white text-xs px-1 py-0.5 rounded-full">New</span>
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-sm">No solution yet</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(form.status)}`}>
@@ -410,54 +572,140 @@ export default function UserDashboard() {
                           <span className="ml-1">{form.status}</span>
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(form.created_at).toLocaleDateString()}
-                      </td>
-                      {!showAllForms ? (
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => setSelectedForm(form)}
-                              className="text-indigo-600 hover:text-indigo-900 flex items-center space-x-1"
-                            >
-                              <Eye className="w-4 h-4" />
-                              <span>View</span>
-                            </button>
-                            {form.status === 'Inprocess' && (
-                              <>
-                                <Link
-                                  href={`/form/edit/${form.id}`}
-                                  className="text-green-600 hover:text-green-900 flex items-center space-x-1"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                  <span>Edit</span>
-                                </Link>
-                                <button
-                                  onClick={() => withdrawForm(form.id)}
-                                  className="text-red-600 hover:text-red-900 flex items-center space-x-1"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  <span>Withdraw</span>
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      ) : (
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
                           <button
-                            onClick={() => setSelectedForm(form)}
+                            onClick={() => {
+                              setSelectedForm(form)
+                              if (form.response && !form.is_response_read) {
+                                markResponseAsRead(form.id)
+                              }
+                            }}
                             className="text-indigo-600 hover:text-indigo-900 flex items-center space-x-1"
                           >
                             <Eye className="w-4 h-4" />
                             <span>View</span>
                           </button>
-                        </td>
-                      )}
+                          {form.status === 'Inprocess' && (
+                            <>
+                              <Link
+                                href={`/form/edit/${form.id}`}
+                                className="text-green-600 hover:text-green-900 flex items-center space-x-1"
+                              >
+                                <Edit className="w-4 h-4" />
+                                <span>Edit</span>
+                              </Link>
+                              <button
+                                onClick={() => withdrawForm(form.id)}
+                                className="text-red-600 hover:text-red-900 flex items-center space-x-1"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                <span>Withdraw</span>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {form.status === 'Accepted' && form.accepter ? (
+                          <div className="text-sm">
+                            <div className="font-medium text-gray-900">{form.accepter.name}</div>
+                            <div className="text-gray-500">{form.accepter.email}</div>
+                            {form.response && (
+                              <div className="mt-1">
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                  Responsed
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(form.created_at).toLocaleDateString()}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={goToPrevPage}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                    <span className="font-medium">{Math.min(endIndex, forms.length)}</span> of{' '}
+                    <span className="font-medium">{forms.length}</span> results
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button
+                      onClick={goToPrevPage}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Previous</span>
+                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    
+                    {/* Page numbers */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i
+                      if (pageNum > totalPages) return null
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => goToPage(pageNum)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            pageNum === currentPage
+                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      )
+                    })}
+                    
+                    <button
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Next</span>
+                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </nav>
+                </div>
+              </div>
             </div>
           )}
           </div>
@@ -480,6 +728,10 @@ export default function UserDashboard() {
             
             <div className="px-6 py-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                <label className="block text-sm font-medium text-gray-700">Form ID</label>
+                  <p className="text-sm text-gray-900 font-mono">{selectedForm.form_id}</p>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Operator</label>
                   <p className="text-sm text-gray-900">{selectedForm.operator}</p>
@@ -519,7 +771,169 @@ export default function UserDashboard() {
                   <label className="block text-sm font-medium text-gray-700">Creator</label>
                   <p className="text-sm text-gray-900">{selectedForm.creator}</p>
                 </div>
+                {selectedForm.status === 'Accepted' && selectedForm.accepter && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Accepter Name</label>
+                      <p className="text-sm text-gray-900">{selectedForm.accepter.name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Accepter Email</label>
+                      <p className="text-sm text-gray-900">{selectedForm.accepter.email}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Accepter Phone</label>
+                      <p className="text-sm text-gray-900">{selectedForm.accepter.phone}</p>
+                    </div>
+                  </>
+                )}
               </div>
+
+              {/* Response Section */}
+              {selectedForm.response && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <MessageSquare className="w-5 h-5 text-blue-600" />
+                    <h4 className="text-lg font-medium text-blue-900">Response from Accepter</h4>
+                    {!selectedForm.is_response_read && (
+                      <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">New</span>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-800 whitespace-pre-wrap bg-white border border-blue-200 rounded-md p-3">
+                    {selectedForm.response}
+                  </div>
+                  {selectedForm.response_images && (
+                    <div className="mt-3">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Response Images:</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {selectedForm.response_images.split(',').map((imageUrl, index) => (
+                          <div key={index} className="relative group bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                            <div className="aspect-video w-full bg-gray-100 relative">
+                              <img
+                                src={imageUrl.trim()}
+                                alt={`Response image ${index + 1}`}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                                style={{ 
+                                  minHeight: '120px',
+                                  backgroundColor: '#f9fafb',
+                                  display: 'block'
+                                }}
+                                loading="lazy"
+                                onError={(e) => {
+                                  console.error('Error loading image:', imageUrl.trim())
+                                  e.currentTarget.style.display = 'none'
+                                  const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                                  if (fallback) fallback.classList.remove('hidden')
+                                }}
+                                onLoad={(e) => {
+                                  console.log('Image loaded successfully:', imageUrl.trim())
+                                  const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                                  if (fallback) fallback.classList.add('hidden')
+                                }}
+                              />
+                              {/* Fallback content when image fails to load */}
+                              <div className="hidden absolute inset-0 flex items-center justify-center bg-gray-100">
+                                <div className="text-center">
+                                  <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  <p className="text-xs text-gray-500">Click to View</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedForm.response_created_at && (
+                    <p className="text-xs text-gray-600 mt-2">
+                      Response created: {new Date(selectedForm.response_created_at).toLocaleString()}
+                    </p>
+                  )}
+                  {selectedForm.response_updated_at && selectedForm.response_updated_at !== selectedForm.response_created_at && (
+                    <p className="text-xs text-gray-600">
+                      Last updated: {new Date(selectedForm.response_updated_at).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Solution Section */}
+              {selectedForm.solution && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <FileText className="w-5 h-5 text-green-600" />
+                    <h4 className="text-lg font-medium text-green-900">Solution</h4>
+                    <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">Admin Solution</span>
+                  </div>
+                  <div className="text-sm text-gray-800 whitespace-pre-wrap bg-white border border-green-200 rounded-md p-3">
+                    {selectedForm.solution}
+                  </div>
+                  {selectedForm.solution_images && (
+                    <div className="mt-3">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Solution Images:</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {selectedForm.solution_images.split(',').map((imageUrl, index) => (
+                          <div key={index} className="relative group bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                            <div className="aspect-video w-full bg-gray-100 relative">
+                              <img
+                                src={imageUrl.trim()}
+                                alt={`Solution image ${index + 1}`}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                                style={{ 
+                                  minHeight: '120px',
+                                  backgroundColor: '#f9fafb',
+                                  display: 'block'
+                                }}
+                                loading="lazy"
+                                crossOrigin="anonymous"
+                                referrerPolicy="no-referrer"
+                                onError={(e) => {
+                                  console.error('Error loading image:', imageUrl.trim())
+                                  e.currentTarget.style.display = 'none'
+                                  const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                                  if (fallback) fallback.classList.remove('hidden')
+                                }}
+                                onLoad={(e) => {
+                                  console.log('Image loaded successfully:', imageUrl.trim())
+                                  const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                                  if (fallback) fallback.classList.add('hidden')
+                                }}
+                              />
+                              {/* Fallback content when image fails to load */}
+                              <div className="hidden absolute inset-0 flex items-center justify-center bg-black bg-opacity-80">
+                                <div className="text-center">
+                                  <svg className="w-8 h-8 text-white mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  <p className="text-sm text-white font-medium">Click to View</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedForm.solution_created_at && (
+                    <p className="text-xs text-gray-600 mt-2">
+                      Solution created: {new Date(selectedForm.solution_created_at).toLocaleString()}
+                    </p>
+                  )}
+                  {selectedForm.solution_updated_at && selectedForm.solution_updated_at !== selectedForm.solution_created_at && (
+                    <p className="text-xs text-gray-600">
+                      Last updated: {new Date(selectedForm.solution_updated_at).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">Issue</label>
@@ -572,6 +986,40 @@ export default function UserDashboard() {
           </div>
         </div>
       )}
+
+      {/* Response View Modal */}
+      <ResponseViewModal
+        isOpen={showResponseModal}
+        onClose={() => {
+          setShowResponseModal(false)
+          setSelectedFormForModal(null)
+        }}
+        response={selectedFormForModal?.response || ''}
+        responseImages={selectedFormForModal?.response_images || null}
+        responseCreatedAt={selectedFormForModal?.response_created_at || null}
+        responseUpdatedAt={selectedFormForModal?.response_updated_at || null}
+        accepterName={selectedFormForModal?.accepter?.name}
+        accepterEmail={selectedFormForModal?.accepter?.email}
+        isResponseRead={selectedFormForModal?.is_response_read || false}
+        onMarkAsRead={() => {
+          if (selectedFormForModal) {
+            markResponseAsRead(selectedFormForModal.id)
+          }
+        }}
+      />
+
+      {/* Solution View Modal */}
+      <SolutionViewModal
+        isOpen={showSolutionModal}
+        onClose={() => {
+          setShowSolutionModal(false)
+          setSelectedFormForModal(null)
+        }}
+        solution={selectedFormForModal?.solution || ''}
+        solutionImages={selectedFormForModal?.solution_images || null}
+        solutionCreatedAt={selectedFormForModal?.solution_created_at || null}
+        solutionUpdatedAt={selectedFormForModal?.solution_updated_at || null}
+      />
     </div>
   )
 }

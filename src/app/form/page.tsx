@@ -108,10 +108,17 @@ export default function FormPage() {
       
       const country = operatorCountryMap[data.operator] || ''
       
+      // Generate form_id theo format: Country-YYYYMMDD-random 3 số
+      const now = new Date()
+      const dateString = now.toISOString().slice(0, 10).replace(/-/g, '') // YYYYMMDD
+      const randomNumber = Math.floor(Math.random() * 1000).toString().padStart(3, '0') // Random 3 số (000-999)
+      const formId = `${country}-${dateString}-${randomNumber}` // Format: Peru-20241010-123
+      
       const { error } = await supabase
         .from('forms')
         .insert({
           ...data,
+          form_id: formId, // Thêm form_id được generate
           country,
           file_url: fileUrl,
           status: 'Inprocess'
@@ -125,7 +132,7 @@ export default function FormPage() {
       localStorage.setItem('userEmail', data.creator)
       localStorage.setItem('userPhone', data.phone_number)
       
-      alert('Form submitted successfully!')
+      alert(`Form submitted successfully! Ticket ID: ${formId}`)
       router.push('/user/dashboard')
     } catch (error) {
       console.error('Error submitting form:', error)
