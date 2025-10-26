@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Upload, Clock } from 'lucide-react'
+import { ArrowLeft, Upload, Clock, X, File } from 'lucide-react'
 import Link from 'next/link'
 
 const formSchema = z.object({
@@ -40,7 +40,7 @@ const operatorCountryMap: Record<string, string> = {
 export default function FormPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   
   const {
     register,
@@ -62,58 +62,87 @@ export default function FormPage() {
   }, [selectedOperator, setValue])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
+    if (e.target.files && e.target.files.length > 0) {
+      const files = Array.from(e.target.files)
       const maxSize = 50 * 1024 * 1024 // 50MB in bytes
+      const maxFiles = 10 // Maximum 10 files
       
-      if (file.size > maxSize) {
-        alert(`File size too large. Maximum allowed size is 50MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB`)
-        e.target.value = '' // Clear the input
-        setSelectedFile(null)
+      // Check total number of files
+      if (selectedFiles.length + files.length > maxFiles) {
+        alert(`Maximum ${maxFiles} files allowed. You currently have ${selectedFiles.length} files selected.`)
+        e.target.value = ''
         return
       }
       
-      setSelectedFile(file)
+      // Validate each file
+      const validFiles: File[] = []
+      for (const file of files) {
+        if (file.size > maxSize) {
+          alert(`File "${file.name}" is too large. Maximum allowed size is 50MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB`)
+          continue
+        }
+        validFiles.push(file)
+      }
+      
+      if (validFiles.length > 0) {
+        setSelectedFiles(prev => [...prev, ...validFiles])
+      }
+      
+      e.target.value = '' // Clear the input
     }
   }
 
-  const uploadFile = async (file: File) => {
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${Date.now()}.${fileExt}`
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const uploadFiles = async (files: File[]) => {
+    const uploadPromises = files.map(async (file) => {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+      
+      const { error } = await supabase.storage
+        .from('form-attachments')
+        .upload(fileName, file)
+      
+      if (error) {
+        throw error
+      }
+      
+      const { data } = supabase.storage
+        .from('form-attachments')
+        .getPublicUrl(fileName)
+      
+      return data.publicUrl
+    })
     
-    const { error } = await supabase.storage
-      .from('form-attachments')
-      .upload(fileName, file)
-    
-    if (error) {
-      throw error
-    }
-    
-    const { data } = supabase.storage
-      .from('form-attachments')
-      .getPublicUrl(fileName)
-    
-    return data.publicUrl
+    return Promise.all(uploadPromises)
   }
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsSubmitting(true)
     
     try {
-      let fileUrl = null
+      let fileUrls: string[] = []
       
-      if (selectedFile) {
-        fileUrl = await uploadFile(selectedFile)
+      if (selectedFiles.length > 0) {
+        fileUrls = await uploadFiles(selectedFiles)
       }
       
       const country = operatorCountryMap[data.operator] || ''
+      const now = new Date()
+      // Generate form_id (ticket ID)
+      const dateString = now.toISOString().slice(0, 10).replace(/-/g, '') // YYYYMMDD
+      const randomNumber = Math.floor(Math.random() * 1000).toString().padStart(3, '0') // Random 3 số (000-999)
+      const formId = `${country}-${dateString}-${randomNumber}` // Format: Peru-20241010-123
       
       const { error } = await supabase
         .from('forms')
         .insert({
           ...data,
+          form_id: formId, // Thêm form_id được generate
           country,
-          file_url: fileUrl,
+          file_url: fileUrls.length > 0 ? fileUrls : null,
           status: 'Inprocess'
         })
       
@@ -125,7 +154,7 @@ export default function FormPage() {
       localStorage.setItem('userEmail', data.creator)
       localStorage.setItem('userPhone', data.phone_number)
       
-      alert('Form submitted successfully!')
+      alert(`Ticket submitted successfully! Ticket ID: ${formId}`)
       router.push('/user/dashboard')
     } catch (error) {
       console.error('Error submitting form:', error)
@@ -274,21 +303,49 @@ export default function FormPage() {
           {/* File Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Dump/OSS KPIs Data</label>
+            {/* Selected Files List */}
+            {selectedFiles.length > 0 && (
+              <div className="mb-3 space-y-2">
+                {selectedFiles.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
+                    <div className="flex items-center">
+                      <File className="w-4 h-4 text-gray-500 mr-2" />
+                      <span className="text-sm text-gray-700">{file.name}</span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="text-red-500 hover:text-red-700 p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
             <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:border-gray-400 transition-colors">
               <input
                 type="file"
                 onChange={handleFileChange}
                 className="hidden"
                 id="file-upload"
-                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.xls,.xlsx,.csv"
+                multiple
+                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.xls,.xlsx,.csv,.zip,.rar"
               />
               <label htmlFor="file-upload" className="cursor-pointer">
                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-600">
-                  {selectedFile ? selectedFile.name : 'Click to upload file'}
+                  {selectedFiles.length > 0 
+                    ? `Click to add more files (${selectedFiles.length}/10 selected)`
+                    : 'Click to upload files'
+                  }
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  PDF, DOC, TXT, JPG, PNG, XLS, XLSX, CSV (max 50MB)
+                  PDF, DOC, TXT, JPG, PNG, XLS, XLSX, CSV, ZIP, RAR (max 50MB each, up to 10 files)
                 </p>
               </label>
             </div>

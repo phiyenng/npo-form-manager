@@ -1,13 +1,23 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Eye, Edit, Trash2, Clock, CheckCircle, XCircle, FileText } from 'lucide-react'
+import { ArrowLeft, Eye, Edit, Trash2, Clock, CheckCircle, XCircle, FileText, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
+import ResponseViewModal from '@/components/ResponseViewModal'
+import SolutionViewModal from '@/components/SolutionViewModal'
+
+interface Accepter {
+  id: string
+  name: string
+  email: string
+  phone: string
+}
 
 interface FormData {
   id: string
+  form_id: string
   operator: string
   country: string
   issue: string
@@ -15,25 +25,45 @@ interface FormData {
   kpis_affected: string
   counter_evaluation: string
   optimization_actions: string
-  file_url: string | null
+  file_url: string[] | string | null
   priority: string
   start_time: string
   end_time: string | null
   creator: string
   phone_number: string
   status: string
+  accepter_id: string | null
+  response: string | null
+  response_created_at: string | null
+  response_updated_at: string | null
+  response_images: string | null
+  response_files: string | null
+  is_response_read: boolean
+  solution: string | null
+  solution_created_at: string | null
+  solution_updated_at: string | null
+  solution_images: string | null
+  solution_files: string | null
+  is_solution_read: boolean
+  accepter?: Accepter
   created_at: string
 }
 
 export default function UserDashboard() {
-  const router = useRouter()
   const [forms, setForms] = useState<FormData[]>([])
-  const [loading, setLoading] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
   const [selectedForm, setSelectedForm] = useState<FormData | null>(null)
   const [userEmail, setUserEmail] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
   const [showSearchForm, setShowSearchForm] = useState(true)
   const [showAllForms, setShowAllForms] = useState(false)
+  const [showResponseModal, setShowResponseModal] = useState(false)
+  const [showSolutionModal, setShowSolutionModal] = useState(false)
+  const [selectedFormForModal, setSelectedFormForModal] = useState<FormData | null>(null)
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
+
 
   useEffect(() => {
     // Check if user info is already stored
@@ -51,7 +81,10 @@ export default function UserDashboard() {
     try {
       const { data, error } = await supabase
         .from('forms')
-        .select('*')
+        .select(`
+          *,
+          accepter:accepters(id, name, email, phone)
+        `)
         .eq('creator', email)
         .order('created_at', { ascending: false })
 
@@ -75,7 +108,10 @@ export default function UserDashboard() {
     try {
       const { data, error } = await supabase
         .from('forms')
-        .select('*')
+        .select(`
+          *,
+          accepter:accepters(id, name, email, phone)
+        `)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -137,6 +173,87 @@ export default function UserDashboard() {
       alert('Error withdrawing ticket')
     }
   }
+
+  const markResponseAsRead = async (formId: string) => {
+    try {
+      const { error } = await supabase
+        .from('forms')
+        .update({ is_response_read: true })
+        .eq('id', formId)
+
+      if (error) {
+        throw error
+      }
+
+      // Update local state
+      setForms(forms.map(form => 
+        form.id === formId ? { ...form, is_response_read: true } : form
+      ))
+    } catch (error) {
+      console.error('Error marking response as read:', error)
+    }
+  }
+
+  const markSolutionAsRead = async (formId: string) => {
+    try {
+      const { error } = await supabase
+        .from('forms')
+        .update({ is_solution_read: true })
+        .eq('id', formId)
+
+      if (error) {
+        throw error
+      }
+
+      // Update local state
+      setForms(forms.map(form => 
+        form.id === formId ? { ...form, is_solution_read: true } : form
+      ))
+    } catch (error) {
+      console.error('Error marking solution as read:', error)
+    }
+  }
+
+  // Pagination logic
+  const totalPages = Math.ceil(forms.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentForms = forms.slice(startIndex, endIndex)
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)))
+  }
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+
+
+  const openResponseModal = (form: FormData) => {
+    setSelectedFormForModal(form)
+    setShowResponseModal(true)
+    if (!form.is_response_read) {
+      markResponseAsRead(form.id)
+    }
+  }
+
+  const openSolutionModal = (form: FormData) => {
+    setSelectedFormForModal(form)
+    setShowSolutionModal(true)
+    if (!form.is_solution_read) {
+      markSolutionAsRead(form.id)
+    }
+  }
+
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -360,49 +477,98 @@ export default function UserDashboard() {
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ticket Details
+                      Ticket ID
                     </th>
-                    {showAllForms && (
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Creator
-                      </th>
-                    )}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Priority
+                      Issue Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Progress Content
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Final Solution
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
+                      Details
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {showAllForms ? 'View' : 'Actions'}
+                      Accepter
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {forms.map((form) => (
+                  {currentForms.map((form) => (
                     <tr key={form.id} className="hover:bg-gray-100">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            {/* Notification dots for unread responses and solutions */}
+                            <div className="flex space-x-1">
+                              {form.response && !form.is_response_read && (
+                                <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0" title="New Response"></div>
+                              )}
+                              {form.solution && !form.is_solution_read && (
+                                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" title="New Solution"></div>
+                              )}
+                            </div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {form.form_id}
+                          </div>
+                          </div>
+                          <div className="mt-1">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(form.priority)}`}>
+                              {form.priority}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
                             {form.issue}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {form.operator} - {form.country}
+                            {form.operator} - {form.country} | {form.creator}
                           </div>
                         </div>
                       </td>
-                      {showAllForms && (
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {form.creator}
-                        </td>
-                      )}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(form.priority)}`}>
-                          {form.priority}
-                        </span>
+                        {form.response ? (
+                          <button
+                            onClick={() => openResponseModal(form)}
+                            className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                            <span>View Response</span>
+                            {!form.is_response_read && (
+                              <span className="bg-red-500 text-white text-xs px-1 py-0.5 rounded-full">New</span>
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {form.solution ? (
+                          <button
+                            onClick={() => openSolutionModal(form)}
+                            className="text-green-600 hover:text-green-800 text-sm flex items-center space-x-1"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span>View Solution</span>
+                            {!form.is_solution_read && (
+                              <span className="bg-green-500 text-white text-xs px-1 py-0.5 rounded-full">New</span>
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(form.status)}`}>
@@ -410,28 +576,30 @@ export default function UserDashboard() {
                           <span className="ml-1">{form.status}</span>
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(form.created_at).toLocaleDateString()}
-                      </td>
-                      {!showAllForms ? (
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => setSelectedForm(form)}
-                              className="text-indigo-600 hover:text-indigo-900 flex items-center space-x-1"
-                            >
-                              <Eye className="w-4 h-4" />
-                              <span>View</span>
-                            </button>
-                            {form.status === 'Inprocess' && (
-                              <>
-                                <Link
-                                  href={`/form/edit/${form.id}`}
-                                  className="text-green-600 hover:text-green-900 flex items-center space-x-1"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                  <span>Edit</span>
-                                </Link>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              setSelectedForm(form)
+                              if (form.response && !form.is_response_read) {
+                                markResponseAsRead(form.id)
+                              }
+                            }}
+                            className="text-indigo-600 hover:text-indigo-900 flex items-center space-x-1"
+                          >
+                            <Eye className="w-4 h-4" />
+                            <span>Details</span>
+                          </button>
+                          {['Inprocess', 'Accepted'].includes(form.status) && (
+                            <>
+                              <Link
+                                href={`/form/edit/${form.id}`}
+                                className="text-green-600 hover:text-green-900 flex items-center space-x-1"
+                              >
+                                <Edit className="w-4 h-4" />
+                                <span>Edit</span>
+                              </Link>
+                              {form.status === 'Inprocess' && (
                                 <button
                                   onClick={() => withdrawForm(form.id)}
                                   className="text-red-600 hover:text-red-900 flex items-center space-x-1"
@@ -439,25 +607,111 @@ export default function UserDashboard() {
                                   <Trash2 className="w-4 h-4" />
                                   <span>Withdraw</span>
                                 </button>
-                              </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {form.status === 'Accepted' && form.accepter ? (
+                          <div className="text-sm">
+                            <div className="font-medium text-gray-900">{form.accepter.name}</div>
+                            <div className="text-gray-500">{form.accepter.email}</div>
+                            {form.response && (
+                              <div className="mt-1">
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                  Responsed
+                                </span>
+                              </div>
                             )}
                           </div>
-                        </td>
-                      ) : (
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => setSelectedForm(form)}
-                            className="text-indigo-600 hover:text-indigo-900 flex items-center space-x-1"
-                          >
-                            <Eye className="w-4 h-4" />
-                            <span>View</span>
-                          </button>
-                        </td>
-                      )}
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(form.created_at).toLocaleDateString()}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={goToPrevPage}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                    <span className="font-medium">{Math.min(endIndex, forms.length)}</span> of{' '}
+                    <span className="font-medium">{forms.length}</span> results
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button
+                      onClick={goToPrevPage}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Previous</span>
+                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    
+                    {/* Page numbers */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i
+                      if (pageNum > totalPages) return null
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => goToPage(pageNum)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            pageNum === currentPage
+                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      )
+                    })}
+                    
+                    <button
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Next</span>
+                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </nav>
+                </div>
+              </div>
             </div>
           )}
           </div>
@@ -480,6 +734,10 @@ export default function UserDashboard() {
             
             <div className="px-6 py-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                <label className="block text-sm font-medium text-gray-700">Ticket ID</label>
+                  <p className="text-sm text-gray-900 font-mono">{selectedForm.form_id}</p>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Operator</label>
                   <p className="text-sm text-gray-900">{selectedForm.operator}</p>
@@ -519,7 +777,286 @@ export default function UserDashboard() {
                   <label className="block text-sm font-medium text-gray-700">Creator</label>
                   <p className="text-sm text-gray-900">{selectedForm.creator}</p>
                 </div>
+                {selectedForm.status === 'Accepted' && selectedForm.accepter && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Accepter Name</label>
+                      <p className="text-sm text-gray-900">{selectedForm.accepter.name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Accepter Email</label>
+                      <p className="text-sm text-gray-900">{selectedForm.accepter.email}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Accepter Phone</label>
+                      <p className="text-sm text-gray-900">{selectedForm.accepter.phone}</p>
+                    </div>
+                  </>
+                )}
               </div>
+
+              {/* Response Section */}
+              {selectedForm.response && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <MessageSquare className="w-5 h-5 text-blue-600" />
+                    <h4 className="text-lg font-medium text-blue-900">Response from Accepter</h4>
+                    {!selectedForm.is_response_read && (
+                      <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">New</span>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-800 whitespace-pre-wrap bg-white border border-blue-200 rounded-md p-3">
+                    {selectedForm.response}
+                  </div>
+                  {selectedForm.response_images && (
+                    <div className="mt-3">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Response Images:</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {selectedForm.response_images.split(',').map((imageUrl, index) => (
+                          <div key={index} className="relative group bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                            <div className="aspect-video w-full bg-gray-100 relative">
+                              <Image
+                                src={imageUrl.trim()}
+                                alt={`Response image ${index + 1}`}
+                                width={300}
+                                height={200}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                                style={{ 
+                                  minHeight: '120px',
+                                  backgroundColor: '#f9fafb',
+                                  display: 'block'
+                                }}
+                                loading="lazy"
+                                unoptimized={true}
+                                onError={(e) => {
+                                  console.error('Error loading image:', imageUrl.trim())
+                                  e.currentTarget.style.display = 'none'
+                                  const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                                  if (fallback) fallback.classList.remove('hidden')
+                                }}
+                                onLoad={(e) => {
+                                  console.log('Image loaded successfully:', imageUrl.trim())
+                                  const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                                  if (fallback) fallback.classList.add('hidden')
+                                }}
+                              />
+                              {/* Fallback content when image fails to load */}
+                              <div className="hidden absolute inset-0 flex items-center justify-center bg-gray-100">
+                                <div className="text-center">
+                                  <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  <p className="text-xs text-gray-500">Image Error</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedForm.response_files && (
+                    <div className="mt-3">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Response Files:</h5>
+                      <div className="space-y-2">
+                        {selectedForm.response_files.split(',').map((fileUrl, index) => {
+                          const fullFileName = fileUrl.split('/').pop() || `File ${index + 1}`
+                          // Remove timestamp prefix if it exists (format: timestamp-originalname)
+                          const parts = fullFileName.split('-')
+                          const fileName = (parts.length > 1 && /^\d+$/.test(parts[0])) 
+                            ? parts.slice(1).join('-') 
+                            : fullFileName
+                          const extension = fileUrl.split('.').pop()?.toLowerCase()
+                          const getFileIcon = (ext: string) => {
+                            switch (ext) {
+                              case 'pdf': return '📄'
+                              case 'doc':
+                              case 'docx': return '📝'
+                              case 'txt': return '📄'
+                              case 'jpg':
+                              case 'jpeg':
+                              case 'png': return '🖼️'
+                              case 'xls':
+                              case 'xlsx': return '📊'
+                              case 'csv': return '📈'
+                              case 'zip':
+                              case 'rar': return '📦'
+                              default: return '📎'
+                            }
+                          }
+                          return (
+                            <div key={index} className="flex items-center justify-between bg-white border border-gray-200 rounded-md p-3 hover:bg-gray-50 transition-colors">
+                              <div className="flex items-center space-x-3">
+                                <span className="text-2xl">{getFileIcon(extension || '')}</span>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{fileName}</p>
+                                  <p className="text-xs text-gray-500">File attachment</p>
+                                </div>
+                              </div>
+                              <a
+                                href={fileUrl.trim()}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors"
+                                title="Download file"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span className="text-sm">Download</span>
+                              </a>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {selectedForm.response_created_at && (
+                    <p className="text-xs text-gray-600 mt-2">
+                      Response created: {new Date(selectedForm.response_created_at).toLocaleString()}
+                    </p>
+                  )}
+                  {selectedForm.response_updated_at && selectedForm.response_updated_at !== selectedForm.response_created_at && (
+                    <p className="text-xs text-gray-600">
+                      Last updated: {new Date(selectedForm.response_updated_at).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Solution Section */}
+              {selectedForm.solution && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <FileText className="w-5 h-5 text-green-600" />
+                    <h4 className="text-lg font-medium text-green-900">Solution</h4>
+                    <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">Admin Solution</span>
+                  </div>
+                  <div className="text-sm text-gray-800 whitespace-pre-wrap bg-white border border-green-200 rounded-md p-3">
+                    {selectedForm.solution}
+                  </div>
+                  {selectedForm.solution_images && (
+                    <div className="mt-3">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Solution Images:</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {selectedForm.solution_images.split(',').map((imageUrl, index) => (
+                          <div key={index} className="relative group bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                            <div className="aspect-video w-full bg-gray-100 relative">
+                              <Image
+                                src={imageUrl.trim()}
+                                alt={`Solution image ${index + 1}`}
+                                width={300}
+                                height={200}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                                style={{ 
+                                  minHeight: '120px',
+                                  backgroundColor: '#f9fafb',
+                                  display: 'block'
+                                }}
+                                loading="lazy"
+                                unoptimized={true}
+                                onError={(e) => {
+                                  console.error('Error loading image:', imageUrl.trim())
+                                  e.currentTarget.style.display = 'none'
+                                  const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                                  if (fallback) fallback.classList.remove('hidden')
+                                }}
+                                onLoad={(e) => {
+                                  console.log('Image loaded successfully:', imageUrl.trim())
+                                  const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                                  if (fallback) fallback.classList.add('hidden')
+                                }}
+                              />
+                              {/* Fallback content when image fails to load */}
+                              <div className="hidden absolute inset-0 flex items-center justify-center bg-gray-100">
+                                <div className="text-center">
+                                  <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  <p className="text-xs text-gray-500">Image Error</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedForm.solution_files && (
+                    <div className="mt-3">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Solution Files:</h5>
+                      <div className="space-y-2">
+                        {selectedForm.solution_files.split(',').map((fileUrl, index) => {
+                          const fullFileName = fileUrl.split('/').pop() || `File ${index + 1}`
+                          // Remove timestamp prefix if it exists (format: timestamp-originalname)
+                          const parts = fullFileName.split('-')
+                          const fileName = (parts.length > 1 && /^\d+$/.test(parts[0])) 
+                            ? parts.slice(1).join('-') 
+                            : fullFileName
+                          const extension = fileUrl.split('.').pop()?.toLowerCase()
+                          const getFileIcon = (ext: string) => {
+                            switch (ext) {
+                              case 'pdf': return '📄'
+                              case 'doc':
+                              case 'docx': return '📝'
+                              case 'txt': return '📄'
+                              case 'jpg':
+                              case 'jpeg':
+                              case 'png': return '🖼️'
+                              case 'xls':
+                              case 'xlsx': return '📊'
+                              case 'csv': return '📈'
+                              case 'zip':
+                              case 'rar': return '📦'
+                              default: return '📎'
+                            }
+                          }
+                          return (
+                            <div key={index} className="flex items-center justify-between bg-white border border-gray-200 rounded-md p-3 hover:bg-gray-50 transition-colors">
+                              <div className="flex items-center space-x-3">
+                                <span className="text-2xl">{getFileIcon(extension || '')}</span>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{fileName}</p>
+                                  <p className="text-xs text-gray-500">File attachment</p>
+                                </div>
+                              </div>
+                              <a
+                                href={fileUrl.trim()}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors"
+                                title="Download file"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span className="text-sm">Download</span>
+                              </a>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {selectedForm.solution_created_at && (
+                    <p className="text-xs text-gray-600 mt-2">
+                      Solution created: {new Date(selectedForm.solution_created_at).toLocaleString()}
+                    </p>
+                  )}
+                  {selectedForm.solution_updated_at && selectedForm.solution_updated_at !== selectedForm.solution_created_at && (
+                    <p className="text-xs text-gray-600">
+                      Last updated: {new Date(selectedForm.solution_updated_at).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              )}
+
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">Issue</label>
@@ -548,15 +1085,32 @@ export default function UserDashboard() {
 
               {selectedForm.file_url && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Attached File</label>
-                  <a
-                    href={selectedForm.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    View File
-                  </a>
+                  <label className="block text-sm font-medium text-gray-700">Attached Files</label>
+                  <div className="space-y-1">
+                    {(() => {
+                      // Handle both array and string formats
+                      let fileUrls: string[] = []
+                      if (Array.isArray(selectedForm.file_url)) {
+                        fileUrls = selectedForm.file_url
+                      } else if (typeof selectedForm.file_url === 'string') {
+                        // Split by comma and clean up URLs
+                        fileUrls = selectedForm.file_url.split(',').map(url => url.trim()).filter(url => url)
+                      }
+                      
+                      return fileUrls.map((url, index) => (
+                        <div key={index}>
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 text-sm"
+                          >
+                            File {index + 1}
+                          </a>
+                        </div>
+                      ))
+                    })()}
+                  </div>
                 </div>
               )}
             </div>
@@ -572,6 +1126,42 @@ export default function UserDashboard() {
           </div>
         </div>
       )}
+
+      {/* Response View Modal */}
+      <ResponseViewModal
+        isOpen={showResponseModal}
+        onClose={() => {
+          setShowResponseModal(false)
+          setSelectedFormForModal(null)
+        }}
+        response={selectedFormForModal?.response || ''}
+        responseImages={selectedFormForModal?.response_images || null}
+        responseFiles={selectedFormForModal?.response_files || null}
+        responseCreatedAt={selectedFormForModal?.response_created_at || null}
+        responseUpdatedAt={selectedFormForModal?.response_updated_at || null}
+        accepterName={selectedFormForModal?.accepter?.name}
+        accepterEmail={selectedFormForModal?.accepter?.email}
+        isResponseRead={selectedFormForModal?.is_response_read || false}
+        onMarkAsRead={() => {
+          if (selectedFormForModal) {
+            markResponseAsRead(selectedFormForModal.id)
+          }
+        }}
+      />
+
+      {/* Solution View Modal */}
+      <SolutionViewModal
+        isOpen={showSolutionModal}
+        onClose={() => {
+          setShowSolutionModal(false)
+          setSelectedFormForModal(null)
+        }}
+        solution={selectedFormForModal?.solution || ''}
+        solutionImages={selectedFormForModal?.solution_images || null}
+        solutionFiles={selectedFormForModal?.solution_files || null}
+        solutionCreatedAt={selectedFormForModal?.solution_created_at || null}
+        solutionUpdatedAt={selectedFormForModal?.solution_updated_at || null}
+      />
     </div>
   )
 }
