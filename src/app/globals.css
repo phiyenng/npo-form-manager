@@ -19,6 +19,16 @@
   }
 }
 
+/* Table with scrollbar on top */
+.table-scroll-top {
+  overflow-x: auto;
+  transform: rotateX(180deg);
+}
+
+.table-scroll-top > table {
+  transform: rotateX(180deg);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
