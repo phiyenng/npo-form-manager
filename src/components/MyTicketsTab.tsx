@@ -55,6 +55,7 @@ export default function MyTicketsTab() {
   const [selectedForm, setSelectedForm] = useState<FormData | null>(null)
   const [userEmail, setUserEmail] = useState('')
   const [showSearchForm, setShowSearchForm] = useState(true)
+  const [showAllForms, setShowAllForms] = useState(false)
   const [showResponseModal, setShowResponseModal] = useState(false)
   const [showSolutionModal, setShowSolutionModal] = useState(false)
   const [selectedFormForModal, setSelectedFormForModal] = useState<FormData | null>(null)
@@ -92,12 +93,43 @@ export default function MyTicketsTab() {
 
       setForms(data || [])
       setShowSearchForm(false)
+      setShowAllForms(false)
     } catch (error) {
       console.error('Error fetching tickets:', error)
       alert('Error loading your tickets')
     } finally {
       setIsSearching(false)
     }
+  }
+
+  const fetchAllForms = async () => {
+    setIsSearching(true)
+    try {
+      const { data, error } = await supabase
+        .from('forms')
+        .select(`
+          *,
+          accepter:accepters(id, name, email, phone)
+        `)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        throw error
+      }
+
+      setForms(data || [])
+      setShowSearchForm(false)
+      setShowAllForms(true)
+    } catch (error) {
+      console.error('Error fetching all tickets:', error)
+      alert('Error loading tickets')
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleViewAllForms = () => {
+    fetchAllForms()
   }
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -228,6 +260,40 @@ export default function MyTicketsTab() {
 
   return (
     <div className="w-full">
+      {/* Action Buttons Bar */}
+      {!showSearchForm && (
+        <div className="bg-white rounded-curved-lg shadow-light p-4 sm:p-5 md:p-6 mb-4 sm:mb-6">
+          <div className="flex flex-wrap gap-2 sm:gap-3 md:gap-4">
+            {!showAllForms && (
+              <button
+                onClick={handleViewAllForms}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 md:px-5 py-2 rounded-curved flex items-center space-x-2 transition-all duration-300 shadow-light hover:shadow-light-md hover:scale-105 active:scale-95 text-xs sm:text-sm md:text-base"
+              >
+                <FileText className="w-4 h-4" />
+                <span>View All Tickets</span>
+              </button>
+            )}
+            {showAllForms && (
+              <button
+                onClick={() => {
+                  setShowAllForms(false)
+                  if (userEmail) {
+                    fetchUserForms(userEmail)
+                  } else {
+                    setShowSearchForm(true)
+                    setForms([])
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 md:px-5 py-2 rounded-curved flex items-center space-x-2 transition-all duration-300 shadow-light hover:shadow-light-md hover:scale-105 active:scale-95 text-xs sm:text-sm md:text-base"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Back to My Tickets</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Search Form */}
       {showSearchForm && (
         <div className="bg-white rounded-curved-lg shadow-light p-5 sm:p-6 mb-6 sm:mb-8">
@@ -276,7 +342,7 @@ export default function MyTicketsTab() {
                 <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-xs sm:text-sm font-medium text-gray-600">My Tickets</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">{showAllForms ? 'Total Tickets' : 'My Tickets'}</p>
                 <p className="text-xl sm:text-2xl font-bold text-gray-900">{forms.length}</p>
               </div>
             </div>
