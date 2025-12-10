@@ -25892,3 +25892,17 @@
 2025-11-24T11:28:55:  ✓ Starting...
 2025-11-24T11:28:57:  ⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
 2025-11-24T11:28:58:  ✓ Ready in 3.5s
+2025-12-01T15:49:57:    ▲ Next.js 15.5.4
+2025-12-01T15:49:57:    - Local:        http://localhost:3000
+2025-12-01T15:49:57:    - Network:      http://192.168.1.227:3000
+2025-12-01T15:49:57: 
+2025-12-01T15:49:57:  ✓ Starting...
+2025-12-01T15:50:01:  ⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
+2025-12-01T15:50:02:  ✓ Ready in 7.2s
+2025-12-08T10:08:56:    ▲ Next.js 15.5.4
+2025-12-08T10:08:56:    - Local:        http://localhost:3000
+2025-12-08T10:08:56:    - Network:      http://192.168.1.227:3000
+2025-12-08T10:08:56: 
+2025-12-08T10:08:56:  ✓ Starting...
+2025-12-08T10:09:02:  ⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
+2025-12-08T10:09:04:  ✓ Ready in 11s
