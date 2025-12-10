@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Viettel Technical Support System",
   description: "Technical support and issue management system for Viettel Overseas Markets",
+  icons: {
+    icon: '/zte-customers-support/zte-logo.svg',
+  },
 };
 
 export default function RootLayout({

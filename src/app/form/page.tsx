@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, Upload, Clock, X, File } from 'lucide-react'
 import Link from 'next/link'
+import NavigationBar from '@/components/NavigationBar'
 
 const formSchema = z.object({
   operator: z.string().min(1, 'Operator is required'),
@@ -165,22 +166,16 @@ export default function FormPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="mb-6">
-          <Link 
-            href="/"
-            className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Submit New Form</h1>
-          <p className="text-gray-600 mt-1">Fill out all required fields to submit your form</p>
-          
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <NavigationBar showTabs={false} />
+      
+      <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-4 sm:py-6 md:py-8 lg:py-10 xl:py-12">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Submit New Form</h1>
+          <p className="text-xs sm:text-sm md:text-base text-gray-600 mt-1">Fill out all required fields to submit your form</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-lg shadow-sm p-6 space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-curved-lg shadow-light p-4 sm:p-5 md:p-6 lg:p-8 space-y-4 sm:space-y-5 md:space-y-6">
           {/* Operator */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -188,7 +183,7 @@ export default function FormPage() {
             </label>
             <select
               {...register('operator')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full border border-gray-300 rounded-curved px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all duration-200 shadow-light"
             >
               <option value="">Select operator</option>
               <option value="Bitel">Bitel</option>
@@ -214,7 +209,7 @@ export default function FormPage() {
               type="text"
               value={selectedOperator ? operatorCountryMap[selectedOperator] || '' : ''}
               readOnly
-              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100 text-gray-900"
+              className="w-full border border-gray-300 rounded-curved px-3 py-2 bg-gray-100 text-gray-900"
               placeholder="Auto-filled based on operator"
             />
           </div>
@@ -227,7 +222,7 @@ export default function FormPage() {
             <input
               type="text"
               {...register('issue')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full border border-gray-300 rounded-curved px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all duration-200 shadow-light"
               placeholder="Enter the issue"
             />
             {errors.issue && (
@@ -246,7 +241,7 @@ export default function FormPage() {
               <textarea
                 {...register('issue_description')}
                 rows={4}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="w-full border border-gray-300 rounded-curved px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all duration-200 shadow-light"
                 placeholder="Describe the issue in detail..."
               />
               {errors.issue_description && (
@@ -261,7 +256,7 @@ export default function FormPage() {
               <textarea
                 {...register('kpis_affected')}
                 rows={3}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="w-full border border-gray-300 rounded-curved px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all duration-200 shadow-light"
                 placeholder="List affected KPIs..."
               />
               {errors.kpis_affected && (
@@ -276,7 +271,7 @@ export default function FormPage() {
               <textarea
                 {...register('counter_evaluation')}
                 rows={3}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="w-full border border-gray-300 rounded-curved px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all duration-200 shadow-light"
                 placeholder="Enter counter evaluation..."
               />
               {errors.counter_evaluation && (
@@ -291,7 +286,7 @@ export default function FormPage() {
               <textarea
                 {...register('optimization_actions')}
                 rows={4}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="w-full border border-gray-300 rounded-curved px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all duration-200 shadow-light"
                 placeholder="List optimization actions taken..."
               />
               {errors.optimization_actions && (
@@ -327,7 +322,7 @@ export default function FormPage() {
               </div>
             )}
             
-            <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:border-gray-400 transition-colors">
+            <div className="border-2 border-dashed border-gray-300 rounded-curved-lg p-4 sm:p-6 text-center hover:border-blue-400 transition-all duration-300 shadow-light hover:shadow-light-md">
               <input
                 type="file"
                 onChange={handleFileChange}
@@ -358,7 +353,7 @@ export default function FormPage() {
             </label>
             <select
               {...register('priority')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full border border-gray-300 rounded-curved px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all duration-200 shadow-light"
             >
               <option value="">Select priority</option>
               <option value="Normal">Normal</option>
@@ -378,7 +373,7 @@ export default function FormPage() {
             <input
               type="datetime-local"
               {...register('start_time')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full border border-gray-300 rounded-curved px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all duration-200 shadow-light"
             />
             {errors.start_time && (
               <p className="text-red-500 text-sm mt-1">{errors.start_time.message}</p>
@@ -393,7 +388,7 @@ export default function FormPage() {
             <input
               type="tel"
               {...register('phone_number')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full border border-gray-300 rounded-curved px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all duration-200 shadow-light"
               placeholder="Enter your phone number"
             />
             {errors.phone_number && (
@@ -409,7 +404,7 @@ export default function FormPage() {
             <input
               type="email"
               {...register('creator')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className="w-full border border-gray-300 rounded-curved px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all duration-200 shadow-light"
               placeholder="Enter your email address"
             />
             {errors.creator && (
@@ -422,7 +417,7 @@ export default function FormPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-4 rounded-md transition-colors flex items-center justify-center"
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-4 rounded-curved-lg transition-all duration-300 flex items-center justify-center shadow-light hover:shadow-light-md hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>

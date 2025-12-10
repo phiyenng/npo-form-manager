@@ -9,6 +9,7 @@ import * as XLSX from 'xlsx'
 import AccepterSelectionModal from '@/components/AccepterSelectionModal'
 import ResponseModal from '@/components/ResponseModal'
 import SolutionModal from '@/components/SolutionModal'
+import NavigationBar from '@/components/NavigationBar'
 
 interface Accepter {
   id: string
@@ -639,75 +640,78 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-               <h1 className="text-2xl font-bold text-gray-900">Viettel Technical Support System</h1>
-               <p className="text-gray-600">Viettel Overseas Markets</p>
-            </div>
-            <div className="flex space-x-4">
-              <button
-                onClick={exportToExcel}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export Excel</span>
-              </button>
-              <button
-                onClick={handleLogout}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <NavigationBar 
+        showTabs={false} 
+        rightActions={
+          <>
+            <button
+              onClick={exportToExcel}
+              className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-curved flex items-center space-x-2 transition-all duration-300 shadow-light hover:shadow-light-md hover:scale-105 active:scale-95 text-sm sm:text-base"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export Excel</span>
+              <span className="sm:hidden">Export</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-3 sm:px-4 py-2 rounded-curved flex items-center space-x-2 transition-all duration-300 shadow-light hover:shadow-light-md hover:scale-105 active:scale-95 text-sm sm:text-base"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Logout</span>
+            </button>
+          </>
+        }
+      />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-4 sm:py-6 md:py-8 lg:py-10 xl:py-12">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6 mb-4 sm:mb-6 md:mb-8">
+          <div className="bg-white rounded-curved-lg shadow-light hover:shadow-light-md p-4 sm:p-5 md:p-6 lg:p-7 transition-all duration-300 hover:scale-105">
             <div className="flex items-center">
-              <FileText className="w-8 h-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Tickets</p>
-                <p className="text-2xl font-bold text-gray-900">{filteredForms.length}</p>
+              <div className="bg-blue-100 p-2 sm:p-2.5 md:p-3 rounded-curved">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-blue-600" />
+              </div>
+              <div className="ml-3 sm:ml-4">
+                <p className="text-xs sm:text-sm md:text-base font-medium text-gray-600">Total Tickets</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">{filteredForms.length}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-curved-lg shadow-light hover:shadow-light-md p-4 sm:p-5 md:p-6 lg:p-7 transition-all duration-300 hover:scale-105">
             <div className="flex items-center">
-              <Clock className="w-8 h-8 text-yellow-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">In Process</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="bg-yellow-100 p-2 sm:p-2.5 md:p-3 rounded-curved">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-yellow-600" />
+              </div>
+              <div className="ml-3 sm:ml-4">
+                <p className="text-xs sm:text-sm md:text-base font-medium text-gray-600">In Process</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
                   {filteredForms.filter(f => f.status === 'Inprocess').length}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-curved-lg shadow-light hover:shadow-light-md p-5 sm:p-6 transition-all duration-300 hover:scale-105">
             <div className="flex items-center">
-              <CheckCircle className="w-8 h-8 text-purple-600" />
+              <div className="bg-purple-100 p-3 rounded-curved">
+                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
+              </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Accepted</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Accepted</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
                   {filteredForms.filter(f => f.status === 'Accepted').length}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-curved-lg shadow-light hover:shadow-light-md p-5 sm:p-6 transition-all duration-300 hover:scale-105">
             <div className="flex items-center">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className="bg-green-100 p-3 rounded-curved">
+                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
+              </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Closed</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Closed</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
                   {filteredForms.filter(f => f.status === 'Closed').length}
                 </p>
               </div>
@@ -716,13 +720,13 @@ export default function AdminDashboard() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm mb-6">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-lg font-medium text-gray-900">Filters</h2>
-            <div className="flex space-x-2">
+        <div className="bg-white rounded-curved-lg shadow-light mb-6 overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h2 className="text-base sm:text-lg font-medium text-gray-900">Filters</h2>
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center space-x-1 text-sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-curved flex items-center space-x-1 text-sm transition-all duration-300 shadow-light hover:shadow-light-md hover:scale-105 active:scale-95"
               >
                 <Filter className="w-4 h-4" />
                 <span>{showFilters ? 'Hide' : 'Show'} Filters</span>
@@ -730,7 +734,7 @@ export default function AdminDashboard() {
               {hasActiveFilters() && (
                 <button
                   onClick={clearFilters}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md flex items-center space-x-1 text-sm"
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-curved flex items-center space-x-1 text-sm transition-all duration-300 shadow-light hover:shadow-light-md hover:scale-105 active:scale-95"
                 >
                   <X className="w-4 h-4" />
                   <span>Clear</span>
@@ -740,15 +744,15 @@ export default function AdminDashboard() {
           </div>
           
           {showFilters && (
-            <div className="px-6 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="px-4 sm:px-6 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {/* Operator Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Operator</label>
                   <select
                     value={filters.operator}
                     onChange={(e) => handleFilterChange('operator', e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                    className="w-full border border-gray-300 rounded-curved px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 transition-all duration-200 shadow-light"
                   >
                     <option value="">All Operators</option>
                     <option value="Bitel">Bitel</option>
@@ -770,7 +774,7 @@ export default function AdminDashboard() {
                   <select
                     value={filters.priority}
                     onChange={(e) => handleFilterChange('priority', e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                    className="w-full border border-gray-300 rounded-curved px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 transition-all duration-200 shadow-light"
                   >
                     <option value="">All Priorities</option>
                     <option value="Normal">Normal</option>
@@ -784,7 +788,7 @@ export default function AdminDashboard() {
                   <select
                     value={filters.status}
                     onChange={(e) => handleFilterChange('status', e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                    className="w-full border border-gray-300 rounded-curved px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 transition-all duration-200 shadow-light"
                   >
                     <option value="">All Status</option>
                     <option value="Inprocess">Inprocess</option>
@@ -800,7 +804,7 @@ export default function AdminDashboard() {
                     type="datetime-local"
                     value={filters.startTimeFrom}
                     onChange={(e) => handleFilterChange('startTimeFrom', e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                    className="w-full border border-gray-300 rounded-curved px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 transition-all duration-200 shadow-light"
                   />
                 </div>
 
@@ -811,7 +815,7 @@ export default function AdminDashboard() {
                     type="datetime-local"
                     value={filters.startTimeTo}
                     onChange={(e) => handleFilterChange('startTimeTo', e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                    className="w-full border border-gray-300 rounded-curved px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 transition-all duration-200 shadow-light"
                   />
                 </div>
               </div>
@@ -820,9 +824,9 @@ export default function AdminDashboard() {
         </div>
 
         {/* Forms Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">
+        <div className="bg-white rounded-curved-lg shadow-light overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <h2 className="text-base sm:text-lg font-medium text-gray-900">
               Ticket Submissions {hasActiveFilters() && `(${filteredForms.length} of ${forms.length})`}
             </h2>
           </div>
@@ -1104,15 +1108,15 @@ export default function AdminDashboard() {
 
       {/* Form Detail Modal */}
       {selectedForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">Ticket Details</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-curved-lg w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl max-h-[90vh] overflow-y-auto shadow-light-lg mx-4">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900">Ticket Details</h3>
               <button
                 onClick={() => setSelectedForm(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 transition-colors rounded-curved p-1 hover:bg-gray-100"
               >
-                <XCircle className="w-6 h-6" />
+                <XCircle className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
             

@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import ResponseViewModal from '@/components/ResponseViewModal'
 import SolutionViewModal from '@/components/SolutionViewModal'
+import NavigationBar from '@/components/NavigationBar'
 
 interface Accepter {
   id: string
@@ -295,69 +296,54 @@ export default function UserDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-              <Link 
-                href="/"
-                className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-2"
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <NavigationBar showTabs={false} />
+      
+      {/* Action Buttons Bar */}
+      <div className="bg-white shadow-light border-b">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap gap-2 sm:gap-4 py-3 sm:py-4">
+            <Link
+              href="/form"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-curved flex items-center space-x-2 transition-all duration-300 shadow-light hover:shadow-light-md hover:scale-105 active:scale-95 text-sm sm:text-base"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Submit New Ticket</span>
+            </Link>
+            {!showSearchForm && !showAllForms && (
+              <button
+                onClick={handleViewAllForms}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-curved flex items-center space-x-2 transition-all duration-300 shadow-light hover:shadow-light-md hover:scale-105 active:scale-95 text-sm sm:text-base"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Home
-              </Link>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {showAllForms ? 'All Ticket Submissions' : 'My Ticket Submissions'}
-              </h1>
-              <p className="text-gray-600">
-                {showAllForms ? 'View all tickets in the system' : 'View and manage your submitted tickets'}
-              </p>
-            </div>
-            <div className="flex space-x-4">
-              <Link
-                href="/form"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
+                <span>View All Tickets</span>
+              </button>
+            )}
+            {showAllForms && (
+              <button
+                onClick={() => {
+                  setShowAllForms(false)
+                  if (userEmail) {
+                    fetchUserForms(userEmail)
+                  } else {
+                    setShowSearchForm(true)
+                    setForms([])
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-curved flex items-center space-x-2 transition-all duration-300 shadow-light hover:shadow-light-md hover:scale-105 active:scale-95 text-sm sm:text-base"
               >
-                <FileText className="w-4 h-4" />
-                <span>Submit New Ticket</span>
-              </Link>
-              {!showSearchForm && !showAllForms && (
-                <button
-                  onClick={handleViewAllForms}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
-                >
-                  <span>View All Tickets</span>
-                </button>
-              )}
-              {showAllForms && (
-                <button
-                  onClick={() => {
-                    setShowAllForms(false)
-                    if (userEmail) {
-                      fetchUserForms(userEmail)
-                    } else {
-                      setShowSearchForm(true)
-                      setForms([])
-                    }
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
-                >
-                  <span>Back to My Tickets</span>
-                </button>
-              )}
-            </div>
+                <span>Back to My Tickets</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12 py-4 sm:py-6 md:py-8 lg:py-10 xl:py-12">
         {/* Search Form */}
         {showSearchForm && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Find Your Tickets</h2>
-            <p className="text-gray-600 mb-6">Enter your email address to view your submitted tickets</p>
+          <div className="bg-white rounded-curved-lg shadow-light p-5 sm:p-6 mb-6 sm:mb-8">
+            <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Find Your Tickets</h2>
+            <p className="text-sm sm:text-base text-gray-600 mb-6">Enter your email address to view your submitted tickets</p>
             
             <form onSubmit={handleSearch} className="space-y-4">
               <div className="max-w-md">
@@ -368,7 +354,7 @@ export default function UserDashboard() {
                   type="email"
                   value={userEmail}
                   onChange={(e) => setUserEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="w-full border border-gray-300 rounded-curved px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-all duration-200 shadow-light"
                   placeholder="Enter your email address"
                   required
                 />
@@ -377,7 +363,7 @@ export default function UserDashboard() {
               <button
                 type="submit"
                 disabled={isSearching}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center space-x-2"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-curved transition-all duration-300 flex items-center space-x-2 shadow-light hover:shadow-light-md hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSearching ? (
                   <>
@@ -394,57 +380,67 @@ export default function UserDashboard() {
 
         {/* Stats */}
         {!showSearchForm && (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white rounded-curved-lg shadow-light hover:shadow-light-md p-5 sm:p-6 transition-all duration-300 hover:scale-105">
             <div className="flex items-center">
-              <FileText className="w-8 h-8 text-blue-600" />
+              <div className="bg-blue-100 p-3 rounded-curved">
+                <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+              </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">
                   {showAllForms ? 'Total Tickets' : 'My Tickets'}
                 </p>
-                <p className="text-2xl font-bold text-gray-900">{forms.length}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{forms.length}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-curved-lg shadow-light hover:shadow-light-md p-5 sm:p-6 transition-all duration-300 hover:scale-105">
             <div className="flex items-center">
-              <Clock className="w-8 h-8 text-yellow-600" />
+              <div className="bg-yellow-100 p-3 rounded-curved">
+                <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-600" />
+              </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">In Process</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">In Process</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
                   {forms.filter(f => f.status === 'Inprocess').length}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-curved-lg shadow-light hover:shadow-light-md p-5 sm:p-6 transition-all duration-300 hover:scale-105">
             <div className="flex items-center">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className="bg-green-100 p-3 rounded-curved">
+                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
+              </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Closed</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Closed</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
                   {forms.filter(f => f.status === 'Closed').length}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-curved-lg shadow-light hover:shadow-light-md p-5 sm:p-6 transition-all duration-300 hover:scale-105">
             <div className="flex items-center">
-              <Eye className="w-8 h-8 text-purple-600" />
+              <div className="bg-purple-100 p-3 rounded-curved">
+                <Eye className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
+              </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Accepted</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Accepted</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
                   {forms.filter(f => f.status === 'Accepted').length}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-curved-lg shadow-light hover:shadow-light-md p-5 sm:p-6 transition-all duration-300 hover:scale-105">
             <div className="flex items-center">
-              <XCircle className="w-8 h-8 text-gray-600" />
+              <div className="bg-gray-100 p-3 rounded-curved">
+                <XCircle className="w-6 h-6 sm:w-8 sm:h-8 text-gray-600" />
+              </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Withdrawn</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Withdrawn</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
                   {forms.filter(f => f.status === 'Withdrawn').length}
                 </p>
               </div>
@@ -455,9 +451,9 @@ export default function UserDashboard() {
 
         {/* Forms Table */}
         {!showSearchForm && (
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Your Ticket Submissions</h2>
+          <div className="bg-white rounded-curved-lg shadow-light overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <h2 className="text-base sm:text-lg font-medium text-gray-900">Your Ticket Submissions</h2>
           </div>
           
           {forms.length === 0 ? (
@@ -720,15 +716,15 @@ export default function UserDashboard() {
 
       {/* Form Detail Modal */}
       {selectedForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">Ticket Details</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-curved-lg w-full max-w-2xl sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl max-h-[90vh] overflow-y-auto shadow-light-lg mx-4">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900">Ticket Details</h3>
               <button
                 onClick={() => setSelectedForm(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 transition-colors rounded-curved p-1 hover:bg-gray-100"
               >
-                <XCircle className="w-6 h-6" />
+                <XCircle className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
             

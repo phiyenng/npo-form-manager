@@ -34,3 +34,59 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Enhanced rounded and curved utilities */
+.rounded-curved {
+  border-radius: 1rem; /* 12px - tương đương rounded-lg */
+}
+
+.rounded-curved-lg {
+  border-radius: 1rem; /* 16px - tương đương rounded-xl */
+}
+
+.rounded-curved-xl {
+  border-radius: 1.25rem; /* 20px - tương đương rounded-2xl */
+}
+
+/* Light shadow utilities */
+.shadow-light {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+}
+
+.shadow-light-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.shadow-light-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+}
+
+/* Responsive scaling utilities */
+@media (max-width: 640px) {
+  .responsive-scale {
+    transform: scale(0.95);
+  }
+  
+  .responsive-text {
+    font-size: 0.875rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .responsive-scale {
+    transform: scale(0.98);
+  }
+}
+
+@media (min-width: 1025px) {
+  .responsive-scale {
+    transform: scale(1);
+  }
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: transform, box-shadow, border-radius;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
